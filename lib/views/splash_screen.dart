@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -25,11 +24,12 @@ class _SplashScreenState extends State<SplashScreen> {
         child: const Column(
           mainAxisAlignment : MainAxisAlignment.center,
           children: [
+          Image(image: AssetImage('lib/assets/images/logo.png')),
           Text(
             '¡Descubre todos los lugares de la UCA!',
             textAlign: TextAlign.center, 
           style: TextStyle(
-            fontStyle: FontStyle.italic,
+            fontFamily: 'Montserrat',
             color: Colors.white,
             fontSize: 32,
   
