@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:vive_la_uca/views/home_page.dart';
 import 'package:vive_la_uca/views/splash_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp( MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+   MyApp({super.key});
+  final _routes = {
+        '/': (context) => const SplashScreen(),
+        '/home': (context)=> const HomePage(),
+        
+
+      }; 
 
   // This widget is the root of your application.
   @override
@@ -17,7 +24,11 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const SplashScreen(),
+      initialRoute: '/',
+      routes: _routes,
+      onGenerateRoute: (settings){
+        return MaterialPageRoute(builder: (context) => const HomePage());
+      }
     );
   }
 }
