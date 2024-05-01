@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/views/home_page.dart';
+import 'package:vive_la_uca/views/login_page.dart';
 import 'package:vive_la_uca/views/splash_screen.dart';
 
 void main() {
@@ -12,7 +13,7 @@ class MyApp extends StatelessWidget {
   final _routes = {
         '/': (context) => const SplashScreen(),
         '/home': (context)=> const HomePage(),
-        
+        '/login': (context) => const LoginPage(),
 
       }; 
 
