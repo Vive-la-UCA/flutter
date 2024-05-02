@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
   final _routes = {
         '/': (context) => const SplashScreen(),
         '/home': (context)=> const HomePage(),
-        '/login': (context) => const LoginPage(),
+        '/login': (context) =>  LoginPage(),
 
       }; 
 
