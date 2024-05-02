@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:vive_la_uca/views/splash_screen.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({ Key? key }) : super(key: key);

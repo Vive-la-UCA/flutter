@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:vive_la_uca/views/home_page.dart';
 import 'package:vive_la_uca/views/login_page.dart';
 
 class SplashScreen extends StatefulWidget {
