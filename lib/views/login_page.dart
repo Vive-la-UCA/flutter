@@ -11,7 +11,7 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  void _toRegister(){
+  void _toRegister() {
     Navigator.pushNamed(context, '/home');
   }
 
@@ -20,7 +20,8 @@ class _LoginPageState extends State<LoginPage> {
       final email = _emailController.text;
       final password = _passwordController.text;
       print('Email: $email, Password: $password'); // Debug
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+      Navigator.of(context)
+          .pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
     }
   }
 
@@ -45,7 +46,10 @@ class _LoginPageState extends State<LoginPage> {
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color.fromARGB(255, 21, 38, 80), Color.fromARGB(255, 21, 38, 100)],
+            colors: [
+              Color.fromARGB(255, 21, 38, 80),
+              Color.fromARGB(255, 21, 38, 100)
+            ],
             begin: Alignment.topRight,
             end: Alignment.bottomLeft,
           ),
@@ -59,7 +63,10 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    const Image(image: AssetImage('lib/assets/images/logo.png'), height: 300,),
+                    const Image(
+                      image: AssetImage('lib/assets/images/logo.png'),
+                      height: 300,
+                    ),
                     const Text(
                       'Inicio de sesión',
                       style: TextStyle(
@@ -84,10 +91,12 @@ class _LoginPageState extends State<LoginPage> {
                           color: Colors.white,
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white, width: 1.0),
+                          borderSide:
+                              BorderSide(color: Colors.white, width: 1.0),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white, width: 1.0),
+                          borderSide:
+                              BorderSide(color: Colors.white, width: 1.0),
                         ),
                         border: OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.red, width: 2.0),
@@ -110,10 +119,12 @@ class _LoginPageState extends State<LoginPage> {
                           color: Colors.white,
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white, width: 1.0),
+                          borderSide:
+                              BorderSide(color: Colors.white, width: 1.0),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white, width: 1.0),
+                          borderSide:
+                              BorderSide(color: Colors.white, width: 1.0),
                         ),
                         border: OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.red),
@@ -143,20 +154,26 @@ class _LoginPageState extends State<LoginPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('No tienes cuenta?',
-                    style: TextStyle(
-                        fontSize: 16.0,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ), ),
-                      TextButton(onPressed: _toRegister, child: const Text('Registrate aqui!', 
-                      style: TextStyle(
-                        fontSize: 16.0,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ) ))
+                        const Text(
+                          'No tienes cuenta?',
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Montserrat',
+                            color: Colors.white,
+                            
+                          ),
+                        ),
+                        TextButton(
+                            onPressed: _toRegister,
+                            child: const Text('Registrate aqui!',
+                                style: TextStyle(
+                                  
+                                  fontSize: 16.0,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Montserrat',
+                                  color: Colors.blue,
+                                )))
                       ],
                     )
                   ],
