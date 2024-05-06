@@ -1,15 +1,23 @@
+
+
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/views/home_page.dart';
 
-class LoginPage extends StatefulWidget {
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({ Key? key }) : super(key: key);
+
   @override
-  _LoginPageState createState() => _LoginPageState();
+  _RegisterPageState createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
+class _RegisterPageState extends State<RegisterPage> {
+
+   final _formKey = GlobalKey<FormState>();
+   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _phoneController = TextEditingController();
 
   void _toRegister() {
     Navigator.pushNamed(context, '/register');
@@ -25,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  String? _validateEmail(String? value) {
+   String? _validateEmail(String? value) {
     Pattern pattern =
         r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
     RegExp regex = RegExp(pattern.toString());
@@ -38,7 +46,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Obtiene el tamaño completo de la pantalla
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
@@ -54,6 +61,7 @@ class _LoginPageState extends State<LoginPage> {
             end: Alignment.bottomLeft,
           ),
         ),
+
         child: SingleChildScrollView(
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: size.height),
@@ -65,18 +73,46 @@ class _LoginPageState extends State<LoginPage> {
                   children: <Widget>[
                     const Image(
                       image: AssetImage('lib/assets/images/logo.png'),
-                      height: 300,
+                      height: 200,
                     ),
                     const Text(
-                      'Inicio de sesión',
+                      'Registro',
                       style: TextStyle(
                         fontSize: 24.0,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w800,
                         fontFamily: 'Montserrat',
                         color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 15),
+                    TextFormField(
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Montserrat',
+                        color: Colors.white,
+                      ),
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nombre',
+                        labelStyle: TextStyle(
+                          fontFamily: 'Montserrat',
+                          color: Colors.white,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(color: Colors.white, width: 1.0),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(color: Colors.white, width: 1.0),
+                        ),
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red, width: 2.0),
+                        ),
+                      ),
+                      
+                    ),
+                    const SizedBox(height: 15,),
                     TextFormField(
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
@@ -105,6 +141,45 @@ class _LoginPageState extends State<LoginPage> {
                       validator: _validateEmail,
                     ),
                     const SizedBox(height: 15),
+                    TextFormField(
+  controller: _phoneController, // Asegúrate de definir `_phoneController`
+  style: const TextStyle(
+    fontFamily: 'Montserrat',
+    color: Colors.white,
+  ),
+  keyboardType: TextInputType.phone, // Usa el teclado de teléfono
+  inputFormatters: [
+                  LengthLimitingTextInputFormatter(8), // Limitar a 8 caracteres
+                  FilteringTextInputFormatter.digitsOnly, // Solo números
+                ],
+  decoration: const InputDecoration(
+    labelText: 'Número de teléfono',
+    labelStyle: TextStyle(
+      fontFamily: 'Montserrat',
+      color: Colors.white,
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderSide: BorderSide(color: Colors.white, width: 1.0),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderSide: BorderSide(color: Colors.white, width: 1.0),
+    ),
+    border: OutlineInputBorder(
+      borderSide: BorderSide(color: Colors.red),
+    ),
+  ),
+  validator: (value) {
+    if (value == null || value.isEmpty) {
+      return 'Por favor ingrese su número de teléfono';
+    } else if (!RegExp(r'^\+?\d{8,8}$').hasMatch(value)) {
+      return 'Por favor ingrese un número de teléfono válido';
+    }
+    return null;
+  },
+),
+
+const SizedBox(height: 15,),
+
                     TextFormField(
                       controller: _passwordController,
                       style: const TextStyle(
@@ -141,7 +216,7 @@ class _LoginPageState extends State<LoginPage> {
                     ElevatedButton(
                       onPressed: _login,
                       child: const Text(
-                        'Iniciar sesión',
+                        'Registrarse',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontFamily: 'Montserrat',
@@ -150,39 +225,17 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'No tienes cuenta?',
-                          style: TextStyle(
-                            fontSize: 16.0,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Montserrat',
-                            color: Colors.white,
-                            
-                          ),
-                        ),
-                        TextButton(
-                            onPressed: _toRegister,
-                            child: const Text('Registrate aqui!',
-                                style: TextStyle(
-                                  
-                                  fontSize: 16.0,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Montserrat',
-                                  color: Colors.blue,
-                                )))
-                      ],
-                    )
+                   
+                    
                   ],
                 ),
               ),
             ),
           ),
         ),
-      ),
+        
+        ),
+      
     );
   }
 }
