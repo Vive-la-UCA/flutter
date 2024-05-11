@@ -1,29 +1,24 @@
-
-
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/views/home_page.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({ Key? key }) : super(key: key);
+  const RegisterPage({Key? key}) : super(key: key);
 
   @override
   _RegisterPageState createState() => _RegisterPageState();
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-
-   final _formKey = GlobalKey<FormState>();
-   final _nameController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _repeatPasswordController = TextEditingController();
   final _phoneController = TextEditingController();
 
-  void _toRegister() {
-    Navigator.pushNamed(context, '/register');
-  }
 
-  void _login() {
+  void _register() {
     if (_formKey.currentState!.validate()) {
       final email = _emailController.text;
       final password = _passwordController.text;
@@ -33,7 +28,7 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-   String? _validateEmail(String? value) {
+  String? _validateEmail(String? value) {
     Pattern pattern =
         r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
     RegExp regex = RegExp(pattern.toString());
@@ -61,7 +56,6 @@ class _RegisterPageState extends State<RegisterPage> {
             end: Alignment.bottomLeft,
           ),
         ),
-
         child: SingleChildScrollView(
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: size.height),
@@ -110,9 +104,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           borderSide: BorderSide(color: Colors.red, width: 2.0),
                         ),
                       ),
-                      
                     ),
-                    const SizedBox(height: 15,),
+                    const SizedBox(
+                      height: 15,
+                    ),
                     TextFormField(
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
@@ -142,44 +137,49 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     const SizedBox(height: 15),
                     TextFormField(
-  controller: _phoneController, // Asegúrate de definir `_phoneController`
-  style: const TextStyle(
-    fontFamily: 'Montserrat',
-    color: Colors.white,
-  ),
-  keyboardType: TextInputType.phone, // Usa el teclado de teléfono
-  inputFormatters: [
-                  LengthLimitingTextInputFormatter(8), // Limitar a 8 caracteres
-                  FilteringTextInputFormatter.digitsOnly, // Solo números
-                ],
-  decoration: const InputDecoration(
-    labelText: 'Número de teléfono',
-    labelStyle: TextStyle(
-      fontFamily: 'Montserrat',
-      color: Colors.white,
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderSide: BorderSide(color: Colors.white, width: 1.0),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderSide: BorderSide(color: Colors.white, width: 1.0),
-    ),
-    border: OutlineInputBorder(
-      borderSide: BorderSide(color: Colors.red),
-    ),
-  ),
-  validator: (value) {
-    if (value == null || value.isEmpty) {
-      return 'Por favor ingrese su número de teléfono';
-    } else if (!RegExp(r'^\+?\d{8,8}$').hasMatch(value)) {
-      return 'Por favor ingrese un número de teléfono válido';
-    }
-    return null;
-  },
-),
-
-const SizedBox(height: 15,),
-
+                      controller:
+                          _phoneController, // Asegúrate de definir `_phoneController`
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        color: Colors.white,
+                      ),
+                      keyboardType:
+                          TextInputType.phone, // Usa el teclado de teléfono
+                      inputFormatters: [
+                        LengthLimitingTextInputFormatter(
+                            8), // Limitar a 8 caracteres
+                        FilteringTextInputFormatter.digitsOnly, // Solo números
+                      ],
+                      decoration: const InputDecoration(
+                        labelText: 'Número de teléfono',
+                        labelStyle: TextStyle(
+                          fontFamily: 'Montserrat',
+                          color: Colors.white,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(color: Colors.white, width: 1.0),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(color: Colors.white, width: 1.0),
+                        ),
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor ingrese su número de teléfono';
+                        } else if (!RegExp(r'^\+?\d{8,8}$').hasMatch(value)) {
+                          return 'Por favor ingrese un número de teléfono válido';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(
+                      height: 15,
+                    ),
                     TextFormField(
                       controller: _passwordController,
                       style: const TextStyle(
@@ -209,12 +209,52 @@ const SizedBox(height: 15,),
                         if (value!.isEmpty) {
                           return 'Por favor ingrese su contraseña';
                         }
+                        if(value!=_repeatPasswordController.text){
+                          return 'Las contraseñas deben ser iguales';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(
+                      height: 15,
+                    ),
+                    TextFormField(
+                      controller: _repeatPasswordController,
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        color: Colors.white,
+                      ),
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Contraseña',
+                        labelStyle: TextStyle(
+                          fontFamily: 'Montserrat',
+                          color: Colors.white,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(color: Colors.white, width: 1.0),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(color: Colors.white, width: 1.0),
+                        ),
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Por favor ingrese su contraseña';
+                        } else if(value != _passwordController.text){
+                          return 'Las contraseñas deben ser iguales';
+                        }
                         return null;
                       },
                     ),
                     const SizedBox(height: 30),
                     ElevatedButton(
-                      onPressed: _login,
+                      onPressed: _register,
                       child: const Text(
                         'Registrarse',
                         style: TextStyle(
@@ -225,17 +265,13 @@ const SizedBox(height: 15,),
                         ),
                       ),
                     ),
-                   
-                    
                   ],
                 ),
               ),
             ),
           ),
         ),
-        
-        ),
-      
+      ),
     );
   }
 }
