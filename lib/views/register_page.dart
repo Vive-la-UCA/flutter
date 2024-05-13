@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:vive_la_uca/controllers/register_controller.dart';
 import 'package:vive_la_uca/views/home_page.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -11,33 +12,17 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _repeatPasswordController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final RegisterController _controller = RegisterController();
 
 
   void _register() {
     if (_formKey.currentState!.validate()) {
-      final email = _emailController.text;
-      final password = _passwordController.text;
-      print('Email: $email, Password: $password'); // Debug
-      Navigator.of(context)
-          .pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+      print('Email: ${_controller.emailController.text}, Password: ${_controller.passwordController.text}'); // Debug
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
     }
   }
 
-  String? _validateEmail(String? value) {
-    Pattern pattern =
-        r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
-    RegExp regex = RegExp(pattern.toString());
-    if (!regex.hasMatch(value!) || value == null) {
-      return 'Ingrese un correo electrónico válido';
-    } else {
-      return null;
-    }
-  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +70,13 @@ class _RegisterPageState extends State<RegisterPage> {
                         fontFamily: 'Montserrat',
                         color: Colors.white,
                       ),
-                      controller: _nameController,
+                      controller: _controller.nameController,
+                      validator: (value){
+                        if(value == null || value.isEmpty ){
+                          return 'Ingrese un nombre de usuario';
+
+                        }
+                      },
                       decoration: const InputDecoration(
                         labelText: 'Nombre',
                         labelStyle: TextStyle(
@@ -114,7 +105,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         fontFamily: 'Montserrat',
                         color: Colors.white,
                       ),
-                      controller: _emailController,
+                      controller: _controller.emailController,
                       decoration: const InputDecoration(
                         labelText: 'Correo electrónico',
                         labelStyle: TextStyle(
@@ -133,12 +124,12 @@ class _RegisterPageState extends State<RegisterPage> {
                           borderSide: BorderSide(color: Colors.red, width: 2.0),
                         ),
                       ),
-                      validator: _validateEmail,
+                      validator: _controller.validateEmail,
                     ),
                     const SizedBox(height: 15),
                     TextFormField(
                       controller:
-                          _phoneController, // Asegúrate de definir `_phoneController`
+                          _controller.phoneController, // Asegúrate de definir `_phoneController`
                       style: const TextStyle(
                         fontFamily: 'Montserrat',
                         color: Colors.white,
@@ -181,7 +172,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       height: 15,
                     ),
                     TextFormField(
-                      controller: _passwordController,
+                      controller: _controller.passwordController,
                       style: const TextStyle(
                         fontFamily: 'Montserrat',
                         color: Colors.white,
@@ -209,7 +200,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         if (value!.isEmpty) {
                           return 'Por favor ingrese su contraseña';
                         }
-                        if(value!=_repeatPasswordController.text){
+                        if(value!=_controller.repeatPasswordController.text){
                           return 'Las contraseñas deben ser iguales';
                         }
                         return null;
@@ -219,7 +210,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       height: 15,
                     ),
                     TextFormField(
-                      controller: _repeatPasswordController,
+                      controller: _controller.repeatPasswordController,
                       style: const TextStyle(
                         fontFamily: 'Montserrat',
                         color: Colors.white,
@@ -246,7 +237,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       validator: (value) {
                         if (value!.isEmpty) {
                           return 'Por favor ingrese su contraseña';
-                        } else if(value != _passwordController.text){
+                        } else if(value != _controller.passwordController.text){
                           return 'Las contraseñas deben ser iguales';
                         }
                         return null;

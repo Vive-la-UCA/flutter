@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/views/home_page.dart';
+import '../controllers/login_controller.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -8,8 +9,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final LoginController _controller = LoginController();
 
   void _toRegister() {
     Navigator.pushNamed(context, '/register');
@@ -17,46 +17,33 @@ class _LoginPageState extends State<LoginPage> {
 
   void _login() {
     if (_formKey.currentState!.validate()) {
-      final email = _emailController.text;
-      final password = _passwordController.text;
-      print('Email: $email, Password: $password'); // Debug
+      print('Email: ${_controller.emailController.text}, Password: ${_controller.passwordController.text}');
       Navigator.of(context)
           .pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
     }
   }
 
-  String? _validateEmail(String? value) {
-    Pattern pattern =
-        r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
-    RegExp regex = RegExp(pattern.toString());
-    if (!regex.hasMatch(value!) || value == null) {
-      return 'Ingrese un correo electrónico válido';
-    } else {
-      return null;
-    }
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Obtiene el tamaño completo de la pantalla
-    final size = MediaQuery.of(context).size;
-
     return Scaffold(
       body: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color.fromARGB(255, 21, 38, 80),
-              Color.fromARGB(255, 21, 38, 100)
-            ],
+            colors: [Color.fromARGB(255, 21, 38, 80), Color.fromARGB(255, 21, 38, 100)],
             begin: Alignment.topRight,
             end: Alignment.bottomLeft,
           ),
         ),
         child: SingleChildScrollView(
           child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: size.height),
+            constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height),
             child: IntrinsicHeight(
               child: Form(
                 key: _formKey,
@@ -83,7 +70,7 @@ class _LoginPageState extends State<LoginPage> {
                         fontFamily: 'Montserrat',
                         color: Colors.white,
                       ),
-                      controller: _emailController,
+                      controller: _controller.emailController,
                       decoration: const InputDecoration(
                         labelText: 'Correo electrónico',
                         labelStyle: TextStyle(
@@ -91,22 +78,20 @@ class _LoginPageState extends State<LoginPage> {
                           color: Colors.white,
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
+                          borderSide: BorderSide(color: Colors.white, width: 1.0),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
+                          borderSide: BorderSide(color: Colors.white, width: 1.0),
                         ),
                         border: OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.red, width: 2.0),
                         ),
                       ),
-                      validator: _validateEmail,
+                      validator: _controller.validateEmail,
                     ),
                     const SizedBox(height: 15),
                     TextFormField(
-                      controller: _passwordController,
+                      controller: _controller.passwordController,
                       style: const TextStyle(
                         fontFamily: 'Montserrat',
                         color: Colors.white,
@@ -119,23 +104,16 @@ class _LoginPageState extends State<LoginPage> {
                           color: Colors.white,
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
+                          borderSide: BorderSide(color: Colors.white, width: 1.0),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
+                          borderSide: BorderSide(color: Colors.white, width: 1.0),
                         ),
                         border: OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.red),
                         ),
                       ),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return 'Por favor ingrese su contraseña';
-                        }
-                        return null;
-                      },
+                      validator: _controller.validatePassword,
                     ),
                     const SizedBox(height: 30),
                     ElevatedButton(
@@ -161,19 +139,19 @@ class _LoginPageState extends State<LoginPage> {
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Montserrat',
                             color: Colors.white,
-                            
                           ),
                         ),
                         TextButton(
-                            onPressed: _toRegister,
-                            child: const Text('Registrate aqui!',
-                                style: TextStyle(
-                                  
-                                  fontSize: 16.0,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Montserrat',
-                                  color: Colors.blue,
-                                )))
+                          onPressed: _toRegister,
+                          child: const Text('Registrate aqui!',
+                            style: TextStyle(
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Montserrat',
+                              color: Colors.blue,
+                            )
+                          )
+                        )
                       ],
                     )
                   ],
