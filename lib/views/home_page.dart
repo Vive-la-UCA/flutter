@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'map_page.dart';
+import 'lobby_page.dart';
+import 'profile_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -10,19 +13,23 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
-  void _onItemTapped(int index) {
+
+   final List<Widget> _pages = [
+    LobbyPage(),
+    ProfilePage(),
+    MapPage(),
+  ];
+
+ void _onItemTapped(int index) {
     setState(() {
-      _selectedIndex = index;
+      _selectedIndex = index;  
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Demo App')),
-      body: Center(
-        child: Text('Selected Index: $_selectedIndex', style: TextStyle(fontSize: 20)),
-      ),
+      body:  _pages.elementAt(_selectedIndex),
       bottomNavigationBar: BottomAppBar(
         shape: CircularNotchedRectangle(),
         notchMargin: 6.0,
