@@ -31,7 +31,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body:  _pages.elementAt(_selectedIndex),
       bottomNavigationBar: BottomAppBar(
-        shape: CircularNotchedRectangle(),
+        shape: const CircularNotchedRectangle(),
         notchMargin: 6.0,
         child: Row(
           mainAxisSize: MainAxisSize.max,
@@ -44,19 +44,19 @@ class _HomePageState extends State<HomePage> {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Icon(Icons.home, color: _selectedIndex == 0 ? Colors.orange : Colors.grey),
-                  Text('Home', style: TextStyle(color: _selectedIndex == 0 ? Colors.orange : Colors.grey))
+                  Text('Inicio', style: TextStyle(fontFamily: 'Montserrat', color: _selectedIndex == 0 ? Colors.orange : Colors.grey), )
                 ],
               ),
             ),
-            SizedBox(width: 48), // The empty space in the middle for FAB
-            // Use a Column for the "Profile" button with a Text label
+            SizedBox(width: 48),
+            
             InkWell(
               onTap: () => _onItemTapped(1),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Icon(Icons.person, color: _selectedIndex == 1 ? Colors.orange : Colors.grey),
-                  Text('Perfil', style: TextStyle(color: _selectedIndex == 1 ? Colors.orange : Colors.grey))
+                  Text('Perfil', style: TextStyle(fontFamily: 'Montserrat',color: _selectedIndex == 1 ? Colors.orange : Colors.grey))
                 ],
               ),
             ),
@@ -64,9 +64,9 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.map, color: _selectedIndex == 2 ? Colors.white : Colors.white),
         onPressed: () => _onItemTapped(2),
-        backgroundColor: _selectedIndex == 2 ? Colors.orange : Colors.blue,
+        backgroundColor: _selectedIndex == 2 ? Colors.orange : const Color.fromARGB(1000, 1, 34, 85),
+        child: const Icon(Icons.map_sharp, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
