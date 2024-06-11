@@ -11,11 +11,19 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  Future<Position> _getCurrentLocation() async {
+  Stream<Position> _getPositionStream() {
+    return Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 1,
+      ),
+    );
+  }
+
+  Future<void> _checkPermission() async {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Check if location services are enabled
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       return Future.error('Location services are disabled.');
@@ -33,8 +41,12 @@ class _MapPageState extends State<MapPage> {
       return Future.error(
           'Location permissions are permanently denied, we cannot request permissions.');
     }
+  }
 
-    return await Geolocator.getCurrentPosition();
+  @override
+  void initState() {
+    super.initState();
+    _checkPermission();
   }
 
   @override
@@ -43,8 +55,8 @@ class _MapPageState extends State<MapPage> {
       appBar: AppBar(
         title: const Text('Map'),
       ),
-      body: FutureBuilder<Position>(
-        future: _getCurrentLocation(),
+      body: StreamBuilder<Position>(
+        stream: _getPositionStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -72,9 +84,9 @@ class _MapPageState extends State<MapPage> {
                       height: 80.0,
                       point: currentLocation,
                       child: const Icon(
-                        Icons.location_pin,
-                        color: Colors.blue,
-                        size: 40.0,
+                        Icons.circle,
+                        color: Colors.red,
+                        size: 20.0,
                       ),
                     ),
                   ],
