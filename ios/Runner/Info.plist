@@ -47,5 +47,12 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>We need your location to show your current position on the map.</string>
+		<key>NSLocationAlwaysUsageDescription</key>
+		<string>We need your location to provide continuous tracking of your position.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>We need your location to provide continuous tracking of your position.</string>
 	</dict>
 </plist>
