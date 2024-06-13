@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:geolocator/geolocator.dart';
@@ -72,11 +73,14 @@ class _MapPageState extends State<MapPage> {
                 CurrentLocationLayer(
                   style: const LocationMarkerStyle(
                     marker: DefaultLocationMarker(
-                      color: Colors.blue,
+                      color: Colors.black,
+                      child: Image(
+                          image: AssetImage(
+                              'lib/assets/images/owlIcon.png')), //Icono
                     ),
-                    headingSectorColor: Colors.blue,
+                    headingSectorColor: Colors.black, // Color de la direccion
                     headingSectorRadius: 50,
-                    markerSize: Size(20, 20),
+                    markerSize: Size(40, 40),
                     markerDirection: MarkerDirection.heading,
                     accuracyCircleColor:
                         Colors.transparent, // Elimina el borde azul
