@@ -72,15 +72,14 @@ class _MapPageState extends State<MapPage> {
                 CurrentLocationLayer(
                   style: const LocationMarkerStyle(
                     marker: DefaultLocationMarker(
-                      child: Icon(
-                        Icons.circle,
-                        color: Colors.red,
-                        size: 20.0,
-                      ),
+                      color: Colors.blue,
                     ),
+                    headingSectorColor: Colors.blue,
+                    headingSectorRadius: 50,
                     markerSize: Size(20, 20),
                     markerDirection: MarkerDirection.heading,
-                    accuracyCircleColor: Colors.transparent, // Elimina el borde azul
+                    accuracyCircleColor:
+                        Colors.transparent, // Elimina el borde azul
                   ),
                 ),
               ],
