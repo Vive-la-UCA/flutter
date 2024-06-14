@@ -12,6 +12,7 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   LatLng? currentLocation;
+  final MapController _mapController = MapController();
 
   @override
   void initState() {
@@ -52,6 +53,12 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
+  void _moveToCurrentLocation() {
+    if (currentLocation != null) {
+      _mapController.move(currentLocation!, 18.0);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,6 +68,7 @@ class _MapPageState extends State<MapPage> {
       body: currentLocation == null
           ? const Center(child: CircularProgressIndicator())
           : FlutterMap(
+              mapController: _mapController,
               options: MapOptions(
                 initialCenter: currentLocation!,
                 initialZoom: 18.0,
@@ -76,7 +84,7 @@ class _MapPageState extends State<MapPage> {
                       color: Colors.black,
                       child: Image(
                           image: AssetImage(
-                              'lib/assets/images/owlIcon.png')), //Icono
+                              'lib/assets/images/owlIcon.png')), // Icono
                     ),
                     headingSectorColor: Colors.black, // Color de la direccion
                     headingSectorRadius: 50,
@@ -88,6 +96,10 @@ class _MapPageState extends State<MapPage> {
                 ),
               ],
             ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _moveToCurrentLocation,
+        child: const Icon(Icons.my_location),
+      ),
     );
   }
 }
