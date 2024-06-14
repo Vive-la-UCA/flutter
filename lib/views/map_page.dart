@@ -99,7 +99,14 @@ class _MapPageState extends State<MapPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: _moveToCurrentLocation,
         child: const Icon(Icons.my_location),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        elevation: 6.0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }
