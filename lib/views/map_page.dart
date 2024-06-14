@@ -94,6 +94,16 @@ class _MapPageState extends State<MapPage> {
                         Colors.transparent, // Elimina el borde azul
                   ),
                 ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: LatLng(13.679197, -89.277038),
+                      width: 80,
+                      height: 80,
+                      child: FlutterLogo(),
+                    ),
+                  ],
+                ),
               ],
             ),
       floatingActionButton: FloatingActionButton(

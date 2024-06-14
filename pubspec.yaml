@@ -31,6 +31,8 @@ flutter:
   assets:
     - lib/assets/images/logo.png
     - lib/assets/images/owlIcon.png
+    - lib/assets/images/pinlocation.png
+    
   fonts:
     - family: Montserrat
       fonts:
