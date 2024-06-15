@@ -1,11 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:http/http.dart' as http;
+import 'package:vive_la_uca/services/location_service.dart';
 
 class MapPage extends StatefulWidget {
+  const MapPage({Key? key}) : super(key: key);
+
   @override
   _MapPageState createState() => _MapPageState();
 }
@@ -13,6 +16,34 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   LatLng? currentLocation;
   final MapController _mapController = MapController();
+  List<LatLng> _routePoints = [];
+
+  // Define una lista de coordenadas personalizadas para la ruta
+  final List<LatLng> customCoordinates = [
+    LatLng(13.734986, -89.734158), // Coordenada 1
+    LatLng(13.735656, -89.732327), // Coordenada 2
+  ];
+
+  final List<Map<String, dynamic>> locations = [
+    {
+      'name': 'Biblioteca UCA',
+      'coordinates': const LatLng(13.6801424, -89.2358217),
+      'imageUrl':
+          'https://lh5.googleusercontent.com/p/AF1QipOaJTAczEMQP-iabIc4yxaiy9AOg2lLNs-3MqWU=w408-h544-k-no',
+    },
+    {
+      'name': 'Location 5',
+      'coordinates': const LatLng(13.735656, -89.732327),
+      'imageUrl':
+          'https://i.pinimg.com/236x/e2/91/62/e29162cb17247e676d3e3a2ca2c93783.jpg',
+    },
+    {
+      'name': 'Location 4',
+      'coordinates': const LatLng(13.734986, -89.734158),
+      'imageUrl':
+          'https://i.pinimg.com/236x/e2/91/62/e29162cb17247e676d3e3a2ca2c93783.jpg',
+    },
+  ];
 
   @override
   void initState() {
@@ -21,36 +52,42 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _determinePosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    // Verificar si los servicios de localización están habilitados.
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      // Servicios de localización no habilitados.
-      return Future.error('Location services are disabled.');
+    try {
+      LatLng location = await LocationService.determinePosition();
+      setState(() {
+        currentLocation = location;
+      });
+      _calculateRoute();
+    } catch (e) {
+      print(e);
     }
+  }
 
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        // Permisos de localización denegados.
-        return Future.error('Location permissions are denied');
+  void _calculateRoute() async {
+    if (currentLocation == null) return;
+
+    List<LatLng> waypoints = [currentLocation!, ...customCoordinates];
+
+    for (int i = 0; i < waypoints.length - 1; i++) {
+      LatLng start = waypoints[i];
+      LatLng end = waypoints[i + 1];
+
+      String url =
+          'http://router.project-osrm.org/route/v1/driving/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?geometries=geojson';
+
+      var response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        var json = jsonDecode(response.body);
+        var coordinates = json['routes'][0]['geometry']['coordinates'] as List;
+        setState(() {
+          _routePoints.addAll(
+              coordinates.map((point) => LatLng(point[1], point[0])).toList());
+        });
+      } else {
+        print('Failed to load route');
       }
     }
-
-    if (permission == LocationPermission.deniedForever) {
-      // Permisos de localización denegados permanentemente.
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
-    }
-
-    // Obtener la ubicación actual del dispositivo.
-    Position position = await Geolocator.getCurrentPosition();
-    setState(() {
-      currentLocation = LatLng(position.latitude, position.longitude);
-    });
   }
 
   void _moveToCurrentLocation() {
@@ -75,46 +112,124 @@ class _MapPageState extends State<MapPage> {
               ),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.example.app',
+                  urlTemplate: 'http://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                ),
+                // Capa de fondo de la línea
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: _routePoints,
+                      strokeWidth: 6.0, // Grosor del fondo de la línea
+                      color: Colors.blue.shade100,
+                      borderColor: Colors.blue.shade300,
+                      borderStrokeWidth: 5, // Color del fondo de la línea
+                      isDotted: false,
+                    ),
+                  ],
+                ),
+                // Capa de la línea punteada
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: _routePoints,
+                      strokeWidth: 10.0, // Grosor de la línea punteada
+                      color: const Color.fromARGB(255, 61, 122, 228),
+                      borderColor: const Color.fromARGB(255, 51, 101, 187),
+                      borderStrokeWidth: 2, // Color de la línea punteada
+                      isDotted: true,
+                    ),
+                  ],
+                ),
+                MarkerLayer(
+                  markers: locations.map((location) {
+                    return Marker(
+                      point: location['coordinates'],
+                      width: 100,
+                      height: 100,
+                      child: Column(
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              location['name'],
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              const Icon(
+                                Icons.location_on,
+                                color: Colors.orange,
+                                size: 50,
+                              ),
+                              Positioned(
+                                top: 8,
+                                child: ClipOval(
+                                  child: Image.network(
+                                    location['imageUrl'],
+                                    width: 24,
+                                    height: 24,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(
+                                        Icons.error,
+                                        color: Colors.red,
+                                        size: 24,
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ),
                 CurrentLocationLayer(
                   style: const LocationMarkerStyle(
                     marker: DefaultLocationMarker(
                       color: Colors.black,
                       child: Image(
-                          image: AssetImage(
-                              'lib/assets/images/owlIcon.png')), // Icono
+                          image: AssetImage('lib/assets/images/owlIcon.png')),
                     ),
-                    headingSectorColor: Colors.black, // Color de la direccion
+                    headingSectorColor: Colors.black,
                     headingSectorRadius: 50,
                     markerSize: Size(40, 40),
                     markerDirection: MarkerDirection.heading,
-                    accuracyCircleColor:
-                        Colors.transparent, // Elimina el borde azul
+                    accuracyCircleColor: Colors.transparent,
                   ),
-                ),
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: LatLng(13.679197, -89.277038),
-                      width: 80,
-                      height: 80,
-                      child: FlutterLogo(),
-                    ),
-                  ],
                 ),
               ],
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _moveToCurrentLocation,
-        child: const Icon(Icons.my_location),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         elevation: 6.0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0),
         ),
+        child: const Icon(Icons.my_location),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
