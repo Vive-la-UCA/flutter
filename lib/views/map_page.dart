@@ -5,6 +5,7 @@ import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:vive_la_uca/services/location_service.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({Key? key}) : super(key: key);
@@ -14,26 +15,25 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  LatLng? currentLocation;
+  LatLng? currentLocation = const LatLng(13.6800541, -89.2360963);
   final MapController _mapController = MapController();
   List<LatLng> _routePoints = [];
 
   // Define una lista de coordenadas personalizadas para la ruta
   final List<LatLng> customCoordinates = [
-    LatLng(13.734986, -89.734158), // Coordenada 1
-    LatLng(13.735656, -89.732327), // Coordenada 2
+    const LatLng(13.6808882, -89.2362231), // Coordenada 1 // Coordenada 2
   ];
 
   final List<Map<String, dynamic>> locations = [
     {
-      'name': 'Biblioteca UCA',
+      'name': 'Localidad',
       'coordinates': const LatLng(13.6801424, -89.2358217),
       'imageUrl':
           'https://lh5.googleusercontent.com/p/AF1QipOaJTAczEMQP-iabIc4yxaiy9AOg2lLNs-3MqWU=w408-h544-k-no',
     },
     {
       'name': 'Location 5',
-      'coordinates': const LatLng(13.735656, -89.732327),
+      'coordinates': const LatLng(13.730928, -89.730464),
       'imageUrl':
           'https://i.pinimg.com/236x/e2/91/62/e29162cb17247e676d3e3a2ca2c93783.jpg',
     },
@@ -55,7 +55,7 @@ class _MapPageState extends State<MapPage> {
     try {
       LatLng location = await LocationService.determinePosition();
       setState(() {
-        currentLocation = location;
+        currentLocation = const LatLng(13.6794619, -89.2365028); //! QUEMADA
       });
       _calculateRoute();
     } catch (e) {
@@ -73,7 +73,7 @@ class _MapPageState extends State<MapPage> {
       LatLng end = waypoints[i + 1];
 
       String url =
-          'http://router.project-osrm.org/route/v1/driving/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?geometries=geojson';
+          'https://7n8zjbzf-5000.use2.devtunnels.ms/route/v1/foot/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?geometries=geojson';
 
       var response = await http.get(Uri.parse(url));
 
