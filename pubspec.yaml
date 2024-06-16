@@ -27,9 +27,17 @@ flutter:
   assets:
     - lib/assets/images/logo.png
     - lib/assets/images/CMR.png
+    - lib/assets/images/M7.jpg
   fonts:
+
     - family: Montserrat
       fonts:
         - asset: lib/assets/fonts/Montserrat.ttf
           weight: 800 # Fixed indentation and weight
+
+    - family: MontserratBold
+      fonts:
+        - asset: lib/assets/fonts/Montserrat-Bold.ttf
+          weight: 800 # Fixed indentation and weight
+    
 

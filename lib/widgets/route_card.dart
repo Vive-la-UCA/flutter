@@ -11,66 +11,52 @@ class RouteCard extends StatelessWidget {
     required this.imagePath,
     required this.title,
     required this.description,
-    required this.distance, 
+    required this.distance,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      clipBehavior: Clip.antiAlias, // Esto asegura que cualquier contenido visual no sobrepase los bordes del card
+      clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16), // Bordes redondeados para el card
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          
           Image.asset(
-              imagePath,
-              fit: BoxFit.cover,
-              width: double.infinity,
-            ),
+            imagePath,
+            height: 150, // Altura fija para la imagen
+            width: double.infinity, // La imagen ocupa todo el ancho de la tarjeta
+            fit: BoxFit.cover, // La imagen se ajusta cubriendo completamente el espacio asignado
+          ),
           Padding(
-            
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                   title,
-                  style: const TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
                 ),
+
                 Text(
                   distance,
-                  style: const TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.grey,
-                  ),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold,),
                 ),
                   ],
                 ),
-                
                 const SizedBox(height: 8),
                 Text(
                   description,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   maxLines: 2,
-                  overflow: TextOverflow.ellipsis, // Añade "..." si el texto sobrepasa el límite de líneas
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 
               ],
             ),
