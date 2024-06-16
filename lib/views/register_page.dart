@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/controllers/register_controller.dart';
 import 'package:vive_la_uca/views/home_page.dart';
+import '../widgets/auth_field.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -63,144 +64,15 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                     const SizedBox(height: 15),
-                    TextFormField(
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
-                      controller: _controller.nameController,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Ingrese un nombre de usuario';
-                        }
-                        return null;
-                      },
-                      decoration: const InputDecoration(
-                        labelText: 'Nombre',
-                        labelStyle: TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: Colors.white,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2.0),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 15,
-                    ),
-                    TextFormField(
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
-                      controller: _controller.emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Correo electrónico',
-                        labelStyle: TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: Colors.white,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2.0),
-                        ),
-                      ),
-                      validator: _controller.validateEmail,
-                    ),
-                    const SizedBox(height: 15),
-                    TextFormField(
-                      controller: _controller.passwordController,
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Contraseña',
-                        labelStyle: TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: Colors.white,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return 'Por favor ingrese su contraseña';
-                        }
-                        if (value !=
-                            _controller.repeatPasswordController.text) {
-                          return 'Las contraseñas deben ser iguales';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(
-                      height: 15,
-                    ),
-                    TextFormField(
-                      controller: _controller.repeatPasswordController,
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Contraseña',
-                        labelStyle: TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: Colors.white,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return 'Por favor ingrese su contraseña';
-                        } else if (value !=
-                            _controller.passwordController.text) {
-                          return 'Las contraseñas deben ser iguales';
-                        }
-                        return null;
-                      },
-                    ),
+                    AuthField(controller: _controller.nameController, labelText: "Nombre", validator: _controller.validateName),
+                    const SizedBox(height: 15,),
+                    AuthField(controller: _controller.emailController, labelText: 'Correo electrónico', validator: _controller.validateEmail),
+                     const SizedBox( height: 15,),
+                    AuthField(controller: _controller.passwordController, labelText:  'Contraseña', validator: _controller.validatePassword, obscureText: true,),
+                    const SizedBox( height: 15,),
+                    AuthField(controller: _controller.repeatPasswordController, labelText: 'Contraseña', validator: _controller.validateRepeatPassword, obscureText: true,),
                     const SizedBox(height: 30),
+                    
                     ElevatedButton(
                       onPressed: _register,
                       child: const Text(

@@ -17,6 +17,13 @@ class RegisterController {
     return null;
   }
 
+  String? validateName(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Ingrese un nombre de usuario';
+    }
+    return null;
+  }
+
   String? validatePhone(String? value) {
     if (value == null || value.isEmpty) {
       return 'Por favor ingrese su número de teléfono';
@@ -29,6 +36,9 @@ class RegisterController {
   String? validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Por favor ingrese su contraseña';
+    }
+    if (value != repeatPasswordController.text) {
+      return 'Las contraseñas deben ser iguales';
     }
     return null;
   }
