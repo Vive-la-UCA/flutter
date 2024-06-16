@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class ProfilePage extends StatelessWidget {
+  const ProfilePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,15 +41,14 @@ class ProfilePage extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 25),
             Expanded(
               child: GridView.count(
                 crossAxisCount: 3,
                 mainAxisSpacing: 20,
                 crossAxisSpacing: 10,
-                children: List.generate(6, (index) {
+                children: List.generate(5, (index) {
                   return Container(
-                    padding: const EdgeInsets.all(8.0),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
@@ -56,25 +57,37 @@ class ProfilePage extends StatelessWidget {
                           color: Colors.grey.withOpacity(0.5),
                           spreadRadius: 2,
                           blurRadius: 5,
-                          offset:
-                              const Offset(0, 3), // changes position of shadow
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Image.network(
-                          'https://via.placeholder.com/50', // Placeholder image URL
-                          width: 50,
-                          height: 50,
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(20)),
+                          child: Image.network(
+                            'https://via.placeholder.com/50', // Placeholder image URL
+                            width: double.infinity,
+                            height: 80, // Adjusted height for the image
+                            fit: BoxFit.cover,
+                          ),
                         ),
-                        const SizedBox(height: 5),
-                        const Text(
-                          'Insignia Romero',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.black),
-                        ),
+                        const Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              'Insignia Monsenor',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )
                       ],
                     ),
                   );
