@@ -5,7 +5,6 @@ import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:vive_la_uca/services/location_service.dart';
-import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({Key? key}) : super(key: key);
@@ -15,13 +14,15 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  LatLng? currentLocation = const LatLng(13.6800541, -89.2360963);
+  LatLng? currentLocation = const LatLng(13.679849, -89.236252);
   final MapController _mapController = MapController();
   List<LatLng> _routePoints = [];
 
   // Define una lista de coordenadas personalizadas para la ruta
   final List<LatLng> customCoordinates = [
-    const LatLng(13.6808882, -89.2362231), // Coordenada 1 // Coordenada 2
+    const LatLng(13.6799237, -89.2362585),
+    const LatLng(13.6807665, -89.2357817),
+    const LatLng(13.678844850811696, -89.23629600872326)
   ];
 
   final List<Map<String, dynamic>> locations = [
@@ -55,7 +56,7 @@ class _MapPageState extends State<MapPage> {
     try {
       LatLng location = await LocationService.determinePosition();
       setState(() {
-        currentLocation = const LatLng(13.6794619, -89.2365028); //! QUEMADA
+        currentLocation = const LatLng(13.6794043, -89.2364737); //! QUEMADA
       });
       _calculateRoute();
     } catch (e) {
@@ -68,25 +69,25 @@ class _MapPageState extends State<MapPage> {
 
     List<LatLng> waypoints = [currentLocation!, ...customCoordinates];
 
-    for (int i = 0; i < waypoints.length - 1; i++) {
-      LatLng start = waypoints[i];
-      LatLng end = waypoints[i + 1];
+    // Crear una lista de coordenadas para la URL
+    String coordinates = waypoints
+        .map((point) => '${point.longitude},${point.latitude}')
+        .join(';');
 
-      String url =
-          'https://7n8zjbzf-5000.use2.devtunnels.ms/route/v1/foot/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?geometries=geojson';
+    String url =
+        'https://7n8zjbzf-5000.use2.devtunnels.ms/route/v1/foot/$coordinates?geometries=geojson';
 
-      var response = await http.get(Uri.parse(url));
+    var response = await http.get(Uri.parse(url));
 
-      if (response.statusCode == 200) {
-        var json = jsonDecode(response.body);
-        var coordinates = json['routes'][0]['geometry']['coordinates'] as List;
-        setState(() {
-          _routePoints.addAll(
-              coordinates.map((point) => LatLng(point[1], point[0])).toList());
-        });
-      } else {
-        print('Failed to load route');
-      }
+    if (response.statusCode == 200) {
+      var json = jsonDecode(response.body);
+      var coordinates = json['routes'][0]['geometry']['coordinates'] as List;
+      setState(() {
+        _routePoints =
+            coordinates.map((point) => LatLng(point[1], point[0])).toList();
+      });
+    } else {
+      print('Failed to load route');
     }
   }
 
