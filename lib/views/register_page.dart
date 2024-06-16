@@ -4,7 +4,7 @@ import 'package:vive_la_uca/controllers/register_controller.dart';
 import 'package:vive_la_uca/views/home_page.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({Key? key}) : super(key: key);
+  const RegisterPage({super.key});
 
   @override
   _RegisterPageState createState() => _RegisterPageState();
@@ -14,14 +14,15 @@ class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final RegisterController _controller = RegisterController();
 
-
   void _register() {
     if (_formKey.currentState!.validate()) {
-      print('Email: ${_controller.emailController.text}, Password: ${_controller.passwordController.text}'); // Debug
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+      print(
+          'Email: ${_controller.emailController.text}, Password: ${_controller.passwordController.text}'); // Debug
+      Navigator.of(context)
+          .pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -69,11 +70,11 @@ class _RegisterPageState extends State<RegisterPage> {
                         color: Colors.white,
                       ),
                       controller: _controller.nameController,
-                      validator: (value){
-                        if(value == null || value.isEmpty ){
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
                           return 'Ingrese un nombre de usuario';
-
                         }
+                        return null;
                       },
                       decoration: const InputDecoration(
                         labelText: 'Nombre',
@@ -154,7 +155,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         if (value!.isEmpty) {
                           return 'Por favor ingrese su contraseña';
                         }
-                        if(value!=_controller.repeatPasswordController.text){
+                        if (value !=
+                            _controller.repeatPasswordController.text) {
                           return 'Las contraseñas deben ser iguales';
                         }
                         return null;
@@ -191,7 +193,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       validator: (value) {
                         if (value!.isEmpty) {
                           return 'Por favor ingrese su contraseña';
-                        } else if(value != _controller.passwordController.text){
+                        } else if (value !=
+                            _controller.passwordController.text) {
                           return 'Las contraseñas deben ser iguales';
                         }
                         return null;
