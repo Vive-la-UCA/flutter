@@ -65,7 +65,8 @@ class _HomePageState extends State<HomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _onItemTapped(2),
-        backgroundColor: _selectedIndex == 2 ? Colors.orange : const Color.fromARGB(1000, 1, 34, 85),
+        
+        backgroundColor: _selectedIndex == 2 ?  Colors.orange :  Theme.of(context).primaryColor,
         child: const Icon(Icons.map_sharp, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
