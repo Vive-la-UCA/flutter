@@ -21,9 +21,7 @@ class _RegisterPageState extends State<RegisterPage> {
       Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
     }
   }
-
   
-
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -127,50 +125,6 @@ class _RegisterPageState extends State<RegisterPage> {
                       validator: _controller.validateEmail,
                     ),
                     const SizedBox(height: 15),
-                    TextFormField(
-                      controller:
-                          _controller.phoneController, // Asegúrate de definir `_phoneController`
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
-                      keyboardType:
-                          TextInputType.phone, // Usa el teclado de teléfono
-                      inputFormatters: [
-                        LengthLimitingTextInputFormatter(
-                            8), // Limitar a 8 caracteres
-                        FilteringTextInputFormatter.digitsOnly, // Solo números
-                      ],
-                      decoration: const InputDecoration(
-                        labelText: 'Número de teléfono',
-                        labelStyle: TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: Colors.white,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Por favor ingrese su número de teléfono';
-                        } else if (!RegExp(r'^\+?\d{8,8}$').hasMatch(value)) {
-                          return 'Por favor ingrese un número de teléfono válido';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(
-                      height: 15,
-                    ),
                     TextFormField(
                       controller: _controller.passwordController,
                       style: const TextStyle(
