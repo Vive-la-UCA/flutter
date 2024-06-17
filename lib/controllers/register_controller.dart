@@ -75,12 +75,14 @@ class RegisterController {
           nameController.text, emailController.text, passwordController.text);
 
       if (result.isNotEmpty) {
+        // ignore: use_build_context_synchronously
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const LoginPage()),
         );
       }
     } catch (e) {
       showDialog(
+        // ignore: use_build_context_synchronously
         context: context,
         builder: (context) {
           return AlertDialog(
