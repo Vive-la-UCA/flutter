@@ -1,14 +1,15 @@
-import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/controllers/register_controller.dart';
 import 'package:vive_la_uca/views/home_page.dart';
 import '../widgets/auth_field.dart';
 import '../widgets/form_button.dart';
+import '../widgets/simple_text.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _RegisterPageState createState() => _RegisterPageState();
 }
 
@@ -53,15 +54,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       image: AssetImage('lib/assets/images/logo.png'),
                       height: 200,
                     ),
-                    const Text(
-                      'Registro',
-                      style: TextStyle(
-                        fontSize: 24.0,
-                        fontWeight: FontWeight.w800,
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
-                    ),
+                    const SimpleText(text: 'Registro'),
                     const SizedBox(height: 15),
                     AuthField(controller: _controller.nameController, labelText: "Nombre", validator: _controller.validateName),
                     const SizedBox(height: 15,),

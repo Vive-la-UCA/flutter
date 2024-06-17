@@ -76,7 +76,7 @@ class ProfilePage extends StatelessWidget {
                         ),
                         const Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.all(8.0),
+                            padding: EdgeInsets.all(8.0),
                             child: Text(
                               'Insignia Monsenor',
                               style: TextStyle(

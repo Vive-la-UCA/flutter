@@ -3,6 +3,8 @@ import 'package:vive_la_uca/widgets/route_card.dart';
 import 'package:vive_la_uca/widgets/search_bar.dart';
 
 class LobbyPage extends StatelessWidget {
+  const LobbyPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,7 +36,7 @@ class LobbyPage extends StatelessWidget {
                 textAlign: TextAlign.justify,
               ),
               const SizedBox(height: 15),
-              SearchingBar(),
+              const SearchingBar(),
               const SizedBox(height: 15),
               const Text(
                 'Rutas populares',

@@ -35,7 +35,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     Future.delayed(const Duration(seconds: 2), () {
       // Comienza a desvanecer la pantalla
       _animationController.reverse().then((value) => {
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) =>  LoginPage()))
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) =>  const LoginPage()))
       });
     });
   }

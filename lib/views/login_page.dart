@@ -3,9 +3,14 @@ import 'package:vive_la_uca/views/home_page.dart';
 import '../controllers/login_controller.dart';
 import '../widgets/auth_field.dart';
 import '../widgets/form_button.dart';
+import '../widgets/register_question.dart';
+import '../widgets/simple_text.dart';
 
 class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
   @override
+  // ignore: library_private_types_in_public_api
   _LoginPageState createState() => _LoginPageState();
 }
 
@@ -55,15 +60,7 @@ class _LoginPageState extends State<LoginPage> {
                       image: AssetImage('lib/assets/images/logo.png'),
                       height: 300,
                     ),
-                    const Text(
-                      'Inicio de sesión',
-                      style: TextStyle(
-                        fontSize: 24.0,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
-                    ),
+                    const SimpleText(text:  'Inicio de sesión'),
                     const SizedBox(height: 15),
                     AuthField(controller: _controller.emailController, labelText: 'Correo electrónico', validator: _controller.validateEmail),
                     const SizedBox(height: 15),
@@ -71,31 +68,7 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 30),
                     FormButton(text: 'Iniciar sesión', onPressed: _login),
                     const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'No tienes cuenta?',
-                          style: TextStyle(
-                            fontSize: 16.0,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Montserrat',
-                            color: Colors.white,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: _toRegister,
-                          child: const Text('Registrate aqui!',
-                            style: TextStyle(
-                              fontSize: 16.0,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Montserrat',
-                              color: Colors.blue,
-                            )
-                          )
-                        )
-                      ],
-                    )
+                    RegisterQuestion(onRegisterPressed: _toRegister),
                   ],
                 ),
               ),
