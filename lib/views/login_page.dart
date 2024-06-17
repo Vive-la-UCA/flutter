@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/views/home_page.dart';
 import '../controllers/login_controller.dart';
+import '../widgets/auth_field.dart';
+import '../widgets/form_button.dart';
+import '../widgets/register_question.dart';
+import '../widgets/simple_text.dart';
 
 class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
   @override
+  // ignore: library_private_types_in_public_api
   _LoginPageState createState() => _LoginPageState();
 }
 
@@ -17,7 +24,6 @@ class _LoginPageState extends State<LoginPage> {
 
   void _login() {
     if (_formKey.currentState!.validate()) {
-      print('Email: ${_controller.emailController.text}, Password: ${_controller.passwordController.text}');
       Navigator.of(context)
           .pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
     }
@@ -54,106 +60,15 @@ class _LoginPageState extends State<LoginPage> {
                       image: AssetImage('lib/assets/images/logo.png'),
                       height: 300,
                     ),
-                    const Text(
-                      'Inicio de sesión',
-                      style: TextStyle(
-                        fontSize: 24.0,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
-                    ),
+                    const SimpleText(text:  'Inicio de sesión'),
                     const SizedBox(height: 15),
-                    TextFormField(
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
-                      controller: _controller.emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Correo electrónico',
-                        labelStyle: TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: Colors.white,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2.0),
-                        ),
-                      ),
-                      validator: _controller.validateEmail,
-                    ),
+                    AuthField(controller: _controller.emailController, labelText: 'Correo electrónico', validator: _controller.validateEmail),
                     const SizedBox(height: 15),
-                    TextFormField(
-                      controller: _controller.passwordController,
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Contraseña',
-                        labelStyle: TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: Colors.white,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red),
-                        ),
-                      ),
-                      validator: _controller.validatePassword,
-                    ),
+                    AuthField(controller: _controller.passwordController, labelText: 'Contraseña', validator: _controller.validatePassword),
                     const SizedBox(height: 30),
-                    ElevatedButton(
-                      onPressed: _login,
-                      child: const Text(
-                        'Iniciar sesión',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Montserrat',
-                          fontSize: 18,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
+                    FormButton(text: 'Iniciar sesión', onPressed: _login),
                     const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'No tienes cuenta?',
-                          style: TextStyle(
-                            fontSize: 16.0,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Montserrat',
-                            color: Colors.white,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: _toRegister,
-                          child: const Text('Registrate aqui!',
-                            style: TextStyle(
-                              fontSize: 16.0,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Montserrat',
-                              color: Colors.blue,
-                            )
-                          )
-                        )
-                      ],
-                    )
+                    RegisterQuestion(onRegisterPressed: _toRegister),
                   ],
                 ),
               ),

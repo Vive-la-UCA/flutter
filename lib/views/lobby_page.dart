@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/widgets/route_card.dart';
 import 'package:vive_la_uca/widgets/search_bar.dart';
+import '../widgets/simple_text.dart';
 
 class LobbyPage extends StatelessWidget {
+  const LobbyPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -13,38 +16,13 @@ class LobbyPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 10),
-              Text(
-                'Vive la UCA',
-                style: TextStyle(
-                  fontFamily: 'MontserratBold',
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).primaryColor,
-                ),
-              ),
+               SimpleText(text:  'Vive la UCA', color: Theme.of(context).primaryColor, fontSize: 20, fontFamily: 'MontserratBold', fontWeight: FontWeight.bold,),
               const SizedBox(height: 10),
-              const Text(
-                'Sé búho: recorré nuestro campus, conocé de primera mano tu futura carrera universitaria.',
-                style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.justify,
-              ),
+              const SimpleText(text: 'Sé búho: recorré nuestro campus, conocé de primera mano tu futura carrera universitaria.',  color: Colors.black, fontFamily: 'Montserrat', fontSize: 12, fontWeight: FontWeight.w500, textAlign: TextAlign.justify),
               const SizedBox(height: 15),
-              SearchingBar(),
+              const SearchingBar(),
               const SizedBox(height: 15),
-              const Text(
-                'Rutas populares',
-                style: TextStyle(
-                  fontFamily: 'MontserratBold',
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.orange,
-                ),
-              ),
+              const SimpleText(text: 'Rutas populares', color: Colors.orange, fontFamily:  'MontserratBold',fontSize: 20,fontWeight: FontWeight.bold, ),
               const SizedBox(height: 10),
               
               const RouteCard(
@@ -54,16 +32,7 @@ class LobbyPage extends StatelessWidget {
                 distance: '1.5 km',
               ),
               const SizedBox(height: 20),
-              
-              const Text(
-                'Lugares populares',
-                style: TextStyle(
-                  fontFamily: 'MontserratBold',
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.orange,
-                ),
-              ), 
+              const SimpleText(text: 'Lugares populares', color: Colors.orange, fontFamily:  'MontserratBold',fontSize: 20,fontWeight: FontWeight.bold, ),
               const SizedBox(height: 10),
               const RouteCard(
                 imagePath: 'lib/assets/images/M7.jpg',

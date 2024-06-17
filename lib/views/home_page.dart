@@ -4,9 +4,10 @@ import 'lobby_page.dart';
 import 'profile_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _HomePageState createState() => _HomePageState();
 }
 
@@ -15,9 +16,9 @@ class _HomePageState extends State<HomePage> {
 
 
    final List<Widget> _pages = [
-    LobbyPage(),
-    ProfilePage(),
-    MapPage(),
+    const LobbyPage(),
+    const ProfilePage(),
+    const MapPage(),
   ];
 
  void _onItemTapped(int index) {
@@ -48,7 +49,7 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-            SizedBox(width: 48),
+           const SizedBox(width: 48),
             
             InkWell(
               onTap: () => _onItemTapped(1),

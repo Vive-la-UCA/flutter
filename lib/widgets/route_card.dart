@@ -7,12 +7,12 @@ class RouteCard extends StatelessWidget {
   final String distance;
 
   const RouteCard({
-    Key? key,
+    super.key,
     required this.imagePath,
     required this.title,
     required this.description,
     required this.distance,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +56,7 @@ class RouteCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 
               ],
             ),

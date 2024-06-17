@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+
 class RegisterController {
   TextEditingController nameController = TextEditingController();
   TextEditingController emailController = TextEditingController();
@@ -11,8 +12,15 @@ class RegisterController {
     Pattern pattern =
         r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
     RegExp regex = RegExp(pattern.toString());
-    if (!regex.hasMatch(value!) || value == null) {
+    if (!regex.hasMatch(value!)) {
       return 'Ingrese un correo electrónico válido';
+    }
+    return null;
+  }
+
+  String? validateName(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Ingrese un nombre de usuario';
     }
     return null;
   }
@@ -29,6 +37,9 @@ class RegisterController {
   String? validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Por favor ingrese su contraseña';
+    }
+    if (value != repeatPasswordController.text) {
+      return 'Las contraseñas deben ser iguales';
     }
     return null;
   }

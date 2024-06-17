@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
   final _routes = {
         '/': (context) => const SplashScreen(),
         '/home': (context)=> const HomePage(),
-        '/login': (context) =>  LoginPage(),
+        '/login': (context) =>  const LoginPage(),
         '/register': (context) =>  const RegisterPage(),
 
       }; 
