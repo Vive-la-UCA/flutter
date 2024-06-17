@@ -22,8 +22,12 @@ class _ProfilePageState extends State<ProfilePage> {
     final token = await TokenStorage.getToken();
 
     if (token != null) {
-      final authService = AuthService(
-          baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
+      
+      // final authService = AuthService(
+      //     baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
+
+      final authService = AuthService(baseUrl: 'http://10.0.2.2:5050/api/auth');
+
       try {
         final userData = await authService.checkToken(token);
         setState(() {

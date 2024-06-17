@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import 'package:vive_la_uca/services/auth_service.dart';
+import 'package:vive_la_uca/views/login_page.dart';
 
 class RegisterController {
   TextEditingController nameController = TextEditingController();
@@ -59,5 +60,43 @@ class RegisterController {
     passwordController.dispose();
     repeatPasswordController.dispose();
     phoneController.dispose();
+  }
+
+  Future<void> register(BuildContext context) async {
+    final authService = AuthService(baseUrl: 'http://10.0.2.2:5050/api/auth');
+
+    try {
+      // check that the passwordController is equals to the repeatPasswordController
+      if (passwordController.text != repeatPasswordController.text) {
+        throw Exception('Las contraseñas deben ser iguales');
+      }
+
+      final result = await authService.register(
+          nameController.text, emailController.text, passwordController.text);
+
+      if (result.isNotEmpty) {
+        // ignore: use_build_context_synchronously
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+        );
+      }
+    } catch (e) {
+      showDialog(
+        // ignore: use_build_context_synchronously
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Error'),
+            content: Text('$e'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 }

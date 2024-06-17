@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/controllers/register_controller.dart';
-import 'package:vive_la_uca/views/home_page.dart';
 import '../widgets/auth_field.dart';
 import '../widgets/form_button.dart';
 import '../widgets/simple_text.dart';
@@ -19,8 +18,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void _register() {
     if (_formKey.currentState!.validate()) {
-      Navigator.of(context)
-          .pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+      _controller.register(context);
     }
   }
 
@@ -56,16 +54,37 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     const SimpleText(text: 'Registro'),
                     const SizedBox(height: 15),
-                    AuthField(controller: _controller.nameController, labelText: "Nombre", validator: _controller.validateName),
-                    const SizedBox(height: 15,),
-                    AuthField(controller: _controller.emailController, labelText: 'Correo electrónico', validator: _controller.validateEmail),
-                     const SizedBox( height: 15,),
-                    AuthField(controller: _controller.passwordController, labelText:  'Contraseña', validator: _controller.validatePassword, obscureText: true,),
-                    const SizedBox( height: 15,),
-                    AuthField(controller: _controller.repeatPasswordController, labelText: 'Contraseña', validator: _controller.validateRepeatPassword, obscureText: true,),
+                    AuthField(
+                        controller: _controller.nameController,
+                        labelText: "Nombre completo",
+                        validator: _controller.validateName),
+                    const SizedBox(
+                      height: 15,
+                    ),
+                    AuthField(
+                        controller: _controller.emailController,
+                        labelText: 'Correo electrónico',
+                        validator: _controller.validateEmail),
+                    const SizedBox(
+                      height: 15,
+                    ),
+                    AuthField(
+                      controller: _controller.passwordController,
+                      labelText: 'Contraseña',
+                      validator: _controller.validatePassword,
+                      obscureText: true,
+                    ),
+                    const SizedBox(
+                      height: 15,
+                    ),
+                    AuthField(
+                      controller: _controller.repeatPasswordController,
+                      labelText: 'Repite la contraseña',
+                      validator: _controller.validateRepeatPassword,
+                      obscureText: true,
+                    ),
                     const SizedBox(height: 30),
                     FormButton(text: 'Registrarse', onPressed: _register),
-                    
                   ],
                 ),
               ),
