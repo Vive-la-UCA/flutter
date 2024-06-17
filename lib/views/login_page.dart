@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/views/home_page.dart';
 import '../controllers/login_controller.dart';
 import '../widgets/auth_field.dart';
 import '../widgets/form_button.dart';
 import '../widgets/register_question.dart';
 import '../widgets/simple_text.dart';
+import 'package:vive_la_uca/services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -22,11 +24,51 @@ class _LoginPageState extends State<LoginPage> {
     Navigator.pushNamed(context, '/register');
   }
 
-  void _login() {
+  void _login() async {
     if (_formKey.currentState!.validate()) {
-      Navigator.of(context)
-          .pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+      // Navigator.of(context)
+      //     .pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+
+      final email = _controller.emailController.text;
+      final password = _controller.passwordController.text;
+
+      try {
+        final authService = AuthService(
+            baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
+        final result = await authService.login(email, password);
+
+        if (result.containsKey('token')) {
+          await TokenStorage.saveToken(result['token']);
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => const HomePage(),
+            ),
+          );
+        } else {
+          _showErrorDialog('Failed to login: ${result['message']}');
+        }
+      } catch (e) {
+        _showErrorDialog('Check credentials and try again.');
+      }
     }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

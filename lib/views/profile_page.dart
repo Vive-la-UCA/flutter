@@ -1,7 +1,57 @@
 import 'package:flutter/material.dart';
+import 'package:vive_la_uca/services/auth_service.dart';
+import 'package:vive_la_uca/services/token_service.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  _ProfilePageState createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  String? _userName; // To hold the user's name
+
+  @override
+  void initState() {
+    super.initState();
+    _loadToken();
+  }
+
+  void _loadToken() async {
+    final token = await TokenStorage.getToken();
+
+    if (token != null) {
+      final authService = AuthService(
+          baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
+      try {
+        final userData = await authService.checkToken(token);
+        setState(() {
+          _userName = userData['name']; // Extracting the name from userData
+        });
+      } catch (e) {
+        _showErrorDialog('Failed to fetch user data: $e');
+      }
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,9 +72,10 @@ class ProfilePage extends StatelessWidget {
                   'https://via.placeholder.com/150'), // Placeholder image
             ),
             const SizedBox(height: 30),
-            const Text(
-              'Chris Bumstead',
-              style: TextStyle(
+            Text(
+              _userName ??
+                  'Loading...', // Display the user's name or loading state
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
