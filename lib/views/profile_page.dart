@@ -1,7 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:vive_la_uca/services/token_service.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  _ProfilePageState createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  String? _token;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadToken();
+  }
+
+  void _loadToken() async {
+    final token = await TokenStorage.getToken();
+    setState(() {
+      _token = token;
+    });
+    // Use the token as needed, for example, make API calls with it
+    print('Retrieved token: $_token');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +65,12 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 25),
+            if (_token != null) ...[
+              Text('Token: $_token'), // Display the token for testing
+              // You can make authenticated API calls using the token here
+            ] else ...[
+              const CircularProgressIndicator(), // Show a loader while the token is being fetched
+            ],
             Expanded(
               child: GridView.count(
                 crossAxisCount: 3,
