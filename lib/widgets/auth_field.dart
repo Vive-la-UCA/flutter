@@ -22,17 +22,17 @@ class AuthField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: labelText,
         labelStyle: const TextStyle(color: Colors.white),
-        enabledBorder: OutlineInputBorder(
+        enabledBorder: const OutlineInputBorder(
           borderSide: BorderSide(color: Colors.white, width: 1.0),
         ),
-        focusedBorder: OutlineInputBorder(
+        focusedBorder: const OutlineInputBorder(
           borderSide: BorderSide(color: Colors.white, width: 1.0),
         ),
-        border: OutlineInputBorder(
+        border: const OutlineInputBorder(
           borderSide: BorderSide(color: Colors.red),
         ),
       ),
-      style: TextStyle(
+      style: const TextStyle(
         fontFamily: 'Montserrat',
         color: Colors.white,
       ),

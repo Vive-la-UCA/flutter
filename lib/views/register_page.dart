@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:vive_la_uca/controllers/register_controller.dart';
 import 'package:vive_la_uca/views/home_page.dart';
 import '../widgets/auth_field.dart';
+import '../widgets/form_button.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -17,8 +18,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void _register() {
     if (_formKey.currentState!.validate()) {
-      print(
-          'Email: ${_controller.emailController.text}, Password: ${_controller.passwordController.text}'); // Debug
       Navigator.of(context)
           .pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
     }
@@ -72,19 +71,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     const SizedBox( height: 15,),
                     AuthField(controller: _controller.repeatPasswordController, labelText: 'Contraseña', validator: _controller.validateRepeatPassword, obscureText: true,),
                     const SizedBox(height: 30),
+                    FormButton(text: 'Registrarse', onPressed: _register),
                     
-                    ElevatedButton(
-                      onPressed: _register,
-                      child: const Text(
-                        'Registrarse',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Montserrat',
-                          fontSize: 18,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
