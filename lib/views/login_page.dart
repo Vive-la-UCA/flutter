@@ -42,14 +42,18 @@ class _LoginPageState extends State<LoginPage> {
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color.fromARGB(255, 21, 38, 80), Color.fromARGB(255, 21, 38, 100)],
+            colors: [
+              Color.fromARGB(255, 21, 38, 80),
+              Color.fromARGB(255, 21, 38, 100)
+            ],
             begin: Alignment.topRight,
             end: Alignment.bottomLeft,
           ),
         ),
         child: SingleChildScrollView(
           child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height),
+            constraints:
+                BoxConstraints(minHeight: MediaQuery.of(context).size.height),
             child: IntrinsicHeight(
               child: Form(
                 key: _formKey,
@@ -60,11 +64,18 @@ class _LoginPageState extends State<LoginPage> {
                       image: AssetImage('lib/assets/images/logo.png'),
                       height: 300,
                     ),
-                    const SimpleText(text:  'Inicio de sesión'),
+                    const SimpleText(text: 'Inicio de sesión'),
                     const SizedBox(height: 15),
-                    AuthField(controller: _controller.emailController, labelText: 'Correo electrónico', validator: _controller.validateEmail),
+                    AuthField(
+                        controller: _controller.emailController,
+                        labelText: 'Correo electrónico',
+                        validator: _controller.validateEmail),
                     const SizedBox(height: 15),
-                    AuthField(controller: _controller.passwordController, labelText: 'Contraseña', validator: _controller.validatePassword),
+                    AuthField(
+                        controller: _controller.passwordController,
+                        labelText: 'Contraseña',
+                        validator: _controller.validatePassword,
+                        obscureText: true),
                     const SizedBox(height: 30),
                     FormButton(text: 'Iniciar sesión', onPressed: _login),
                     const SizedBox(height: 10),
