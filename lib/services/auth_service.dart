@@ -15,12 +15,27 @@ class AuthService {
       headers: {'Content-Type': 'application/json'},
     );
 
-    print(response);
-
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to login');
+    }
+  }
+
+  Future<Map<String, dynamic>> register(
+      String name, String email, String password) async {
+    final url = Uri.parse('$baseUrl/register');
+
+    final response = await http.post(
+      url,
+      body: jsonEncode({'name': name, 'email': email, 'password': password}),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to register');
     }
   }
 
