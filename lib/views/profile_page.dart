@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vive_la_uca/services/auth_service.dart';
 import 'package:vive_la_uca/services/token_service.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -9,7 +10,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String? _token;
+  String? _userName; // To hold the user's name
 
   @override
   void initState() {
@@ -19,11 +20,37 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _loadToken() async {
     final token = await TokenStorage.getToken();
-    setState(() {
-      _token = token;
-    });
-    // Use the token as needed, for example, make API calls with it
-    print('Retrieved token: $_token');
+
+    if (token != null) {
+      final authService = AuthService(
+          baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
+      try {
+        final userData = await authService.checkToken(token);
+        setState(() {
+          _userName = userData['name']; // Extracting the name from userData
+        });
+      } catch (e) {
+        _showErrorDialog('Failed to fetch user data: $e');
+      }
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -45,9 +72,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   'https://via.placeholder.com/150'), // Placeholder image
             ),
             const SizedBox(height: 30),
-            const Text(
-              'Chris Bumstead',
-              style: TextStyle(
+            Text(
+              _userName ??
+                  'Loading...', // Display the user's name or loading state
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
@@ -65,12 +93,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const SizedBox(height: 25),
-            if (_token != null) ...[
-              Text('Token: $_token'), // Display the token for testing
-              // You can make authenticated API calls using the token here
-            ] else ...[
-              const CircularProgressIndicator(), // Show a loader while the token is being fetched
-            ],
             Expanded(
               child: GridView.count(
                 crossAxisCount: 3,
