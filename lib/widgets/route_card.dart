@@ -24,7 +24,7 @@ class RouteCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Image.asset(
+          Image.network(
             imagePath,
             height: 150, // Altura fija para la imagen
             width: double.infinity, // La imagen ocupa todo el ancho de la tarjeta
