@@ -17,9 +17,13 @@ class RouteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 330, 
-      // Anchura fija para la tarjeta en un ListView horizontal
+      color: Colors.white,
+      
+      width: 330,  // Anchura fija para la tarjeta en un ListView horizontal
       child: Card(
+        color: Colors.white,
+        
+        elevation: 5,  // Ajusta este valor para controlar la profundidad de la sombra
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -47,7 +51,7 @@ class RouteCard extends StatelessWidget {
                       ),
                       Text(
                         distance,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold,),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -58,7 +62,6 @@ class RouteCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  
                 ],
               ),
             ),

@@ -67,6 +67,7 @@ class _LobbyPageState extends State<LobbyPage> {
                           return Text('Error: ${snapshot.error}');
                         } else if (snapshot.hasData) {
                           return Container(
+                            
                             height: 260, // Ajusta la altura según el contenido de la tarjeta
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
