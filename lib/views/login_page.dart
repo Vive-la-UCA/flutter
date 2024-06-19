@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/views/home_page.dart';
 import '../controllers/login_controller.dart';
@@ -21,7 +22,7 @@ class _LoginPageState extends State<LoginPage> {
   final LoginController _controller = LoginController();
 
   void _toRegister() {
-    Navigator.pushNamed(context, '/register');
+    GoRouter.of(context).replace('/register');
   }
 
   void _login() async {
@@ -42,11 +43,7 @@ class _LoginPageState extends State<LoginPage> {
 
         if (result.containsKey('token')) {
           await TokenStorage.saveToken(result['token']);
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => const HomePage(),
-            ),
-          );
+          GoRouter.of(context).replace('/home');
         } else {
           _showErrorDialog('Failed to login: ${result['message']}');
         }
