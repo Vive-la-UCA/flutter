@@ -8,10 +8,10 @@ import 'package:vive_la_uca/views/splash_screen.dart';
 
 void main() {
   runApp( MyApp());
-  _loadToken();
+  loadToken();
 }
 bool isLoggedIn = false;
-void _loadToken() async {
+void loadToken() async {
     final token = await TokenStorage.getToken();
     if (token != null) {
       isLoggedIn=true;

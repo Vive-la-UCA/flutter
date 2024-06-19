@@ -37,7 +37,7 @@ class _LoginPageState extends State<LoginPage> {
         //     baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
 
         final authService =
-            AuthService(baseUrl: 'http://10.0.2.2:5050/api/auth');
+            AuthService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
         final result = await authService.login(email, password);
 
         if (result.containsKey('token')) {

@@ -63,7 +63,7 @@ class RegisterController {
   }
 
   Future<void> register(BuildContext context) async {
-    final authService = AuthService(baseUrl: 'http://10.0.2.2:5050/api/auth');
+    final authService = AuthService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
 
     try {
       // check that the passwordController is equals to the repeatPasswordController

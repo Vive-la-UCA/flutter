@@ -28,8 +28,8 @@ class _LobbyPageState extends State<LobbyPage> {
     final token = await TokenStorage.getToken();
     if (token != null) {
       setState(() {
-        futureRoutes = RouteService(baseUrl: 'http://10.0.2.2:5050').getRoutes(token);
-        futureLocations = LocationService(baseUrl: 'http://10.0.2.2:5050').getRoutes(token);
+        futureRoutes = RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back').getRoutes(token);
+        futureLocations = LocationService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back').getRoutes(token);
         print(futureLocations);
         _isLoading = false;  // Actualizar estado de carga
       });
@@ -71,14 +71,14 @@ class _LobbyPageState extends State<LobbyPage> {
                         } else if (snapshot.hasData) {
                           return Container(
                             
-                            height: 260, // Ajusta la altura según el contenido de la tarjeta
+                            height: 270, // Ajusta la altura según el contenido de la tarjeta
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
                               itemCount: snapshot.data!.length,
                               itemBuilder: (context, index) {
                                 var route = snapshot.data![index];
                                 return RouteCard(
-                                  imagePath: 'http://10.0.2.2:5050/uploads/' + route['image'], // Asegura que la URL es correcta
+                                  imagePath: 'https://vivelauca.uca.edu.sv/admin-back/uploads/' + route['image'], // Asegura que la URL es correcta
                                   title: route['name'],
                                   description: 'Descripción de la rutaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
                                   distance: '5 km',
@@ -107,14 +107,14 @@ class _LobbyPageState extends State<LobbyPage> {
                         } else if (snapshot.hasData) {
                           return Container(
                             
-                            height: 260, // Ajusta la altura según el contenido de la tarjeta
+                            height: 270, // Ajusta la altura según el contenido de la tarjeta
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
                               itemCount: snapshot.data!.length,
                               itemBuilder: (context, index) {
                                 var location = snapshot.data![index];
                                 return RouteCard(
-                                  imagePath: 'http://10.0.2.2:5050/uploads/' + location['image'], // Asegura que la URL es correcta
+                                  imagePath: 'https://vivelauca.uca.edu.sv/admin-back/uploads/' + location['image'], // Asegura que la URL es correcta
                                   title: location['name'],
                                   description: location['description'] ,
                                   distance: '5 km',
