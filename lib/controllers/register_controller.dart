@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:vive_la_uca/services/auth_service.dart';
-import 'package:vive_la_uca/views/login_page.dart';
+import 'package:vive_la_uca/widgets/simple_text.dart';
+
+
 
 class RegisterController {
   TextEditingController nameController = TextEditingController();
@@ -66,7 +69,6 @@ class RegisterController {
     final authService = AuthService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
 
     try {
-      // check that the passwordController is equals to the repeatPasswordController
       if (passwordController.text != repeatPasswordController.text) {
         throw Exception('Las contraseñas deben ser iguales');
       }
@@ -75,27 +77,38 @@ class RegisterController {
           nameController.text, emailController.text, passwordController.text);
 
       if (result.isNotEmpty) {
-        // ignore: use_build_context_synchronously
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginPage()),
+        // Muestra un diálogo de éxito antes de redirigir
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: SimpleText(text: 'Registro Exitoso', fontSize: 20,color: Theme.of(context).primaryColor , textAlign: TextAlign.left,),
+            content: const Text('Tu cuenta ha sido creada exitosamente.'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Cierra el diálogo
+                  GoRouter.of(context).replace('/login'); // Navega a home
+                },
+                child: SimpleText(text: 'Ok', fontSize: 14,color: Theme.of(context).primaryColor ),
+              ),
+            ],
+          ),
         );
       }
     } catch (e) {
-      showDialog(
-        // ignore: use_build_context_synchronously
+      // Manejo de errores con diálogo
+      await showDialog(
         context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Error'),
-            content: Text('$e'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text(e.toString()),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
       );
     }
   }

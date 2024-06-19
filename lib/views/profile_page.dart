@@ -155,7 +155,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const SizedBox(height: 15),
-            const LogoutButton()
+            const LogoutButton(),
+            const SizedBox(height: 15),
           ],
         ),
       ),
