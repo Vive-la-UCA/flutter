@@ -15,7 +15,7 @@ class LocationService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['locations']; // Devuelve directamente la lista de rutas
+      return data['locations']; 
     } else {
       throw Exception('Failed to load locations');
     }
