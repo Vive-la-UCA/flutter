@@ -15,6 +15,8 @@ void _loadToken() async {
     final token = await TokenStorage.getToken();
     if (token != null) {
       isLoggedIn=true;
+    }else{
+      isLoggedIn = false;
     }
 
   }
