@@ -17,7 +17,6 @@ void _loadToken() async {
       isLoggedIn=true;
     }
 
-    
   }
 
 
@@ -50,6 +49,7 @@ final GoRouter _router = GoRouter(
     if(isLoggedIn){
       return "/home";
     }
+    return null;
   },
   
   routes: [
