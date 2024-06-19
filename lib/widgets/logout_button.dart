@@ -20,7 +20,7 @@ class _LogoutButtonState extends State<LogoutButton> {
   Widget build(BuildContext context) {
     return ElevatedButton(
       onPressed: _logout,
-      child: const SimpleText(text: 'Cerrar sesión'),
+      child: const SimpleText(text: 'Cerrar sesión', fontSize: 16, color: Colors.red,),
     );
   }
 }
