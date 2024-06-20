@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:vive_la_uca/views/login_page.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -38,12 +38,10 @@ class _SplashScreenState extends State<SplashScreen>
     _setupFirebaseMessaging();
 
     Future.delayed(const Duration(seconds: 2), () {
-      // Start fading out the screen
-      _animationController.reverse().then((value) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginPage()),
-        );
-      });
+      // Comienza a desvanecer la pantalla
+      _animationController
+          .reverse()
+          .then((value) => {GoRouter.of(context).replace('/login')});
     });
   }
 
