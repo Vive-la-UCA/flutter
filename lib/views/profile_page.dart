@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/services/auth_service.dart';
 import 'package:vive_la_uca/services/token_service.dart';
+import 'package:vive_la_uca/services/badge_service.dart';
 import 'package:vive_la_uca/widgets/logout_button.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -12,6 +13,8 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   String? _userName; // To hold the user's name
+  List<String> _badgeIds = []; // To hold badge IDs
+  List<Map<String, dynamic>> _badges = []; // To hold detailed badge data
 
   @override
   void initState() {
@@ -23,24 +26,40 @@ class _ProfilePageState extends State<ProfilePage> {
     final token = await TokenStorage.getToken();
 
     if (token != null) {
-      
-      // final authService = AuthService(
-      //     baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
-
-      final authService = AuthService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
+      final authService = AuthService(
+          baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
 
       try {
         final userData = await authService.checkToken(token);
         setState(() {
-          _userName = userData['name']; // Extracting the name from userData
+          _userName = userData['name'];
+          _badgeIds = List<String>.from(userData['badges'] ?? []);
         });
+        _fetchBadges(token);
       } catch (e) {
         _showErrorDialog('Failed to fetch user data: $e');
       }
     }
   }
 
-  
+  void _fetchBadges(String token) async {
+    final badgeService =
+        BadgeService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
+
+    try {
+      final badges = await Future.wait(
+        _badgeIds.map((id) async {
+          final badge = await badgeService.getBadgeById(token, id);
+          return badge;
+        }),
+      );
+      setState(() {
+        _badges = badges.toList();
+      });
+    } catch (e) {
+      _showErrorDialog('Failed to fetch badges: $e');
+    }
+  }
 
   void _showErrorDialog(String message) {
     showDialog(
@@ -75,13 +94,11 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 30),
             const CircleAvatar(
               radius: 50,
-              backgroundImage: NetworkImage(
-                  'https://via.placeholder.com/150'), // Placeholder image
+              backgroundImage: NetworkImage('https://via.placeholder.com/150'),
             ),
             const SizedBox(height: 30),
             Text(
-              _userName ??
-                  'Loading...', // Display the user's name or loading state
+              _userName ?? 'Loading...',
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -101,58 +118,25 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const SizedBox(height: 25),
             Expanded(
-              child: GridView.count(
-                crossAxisCount: 3,
-                mainAxisSpacing: 20,
-                crossAxisSpacing: 10,
-                children: List.generate(5, (index) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(20)),
-                          child: Image.network(
-                            'https://via.placeholder.com/50', // Placeholder image URL
-                            width: double.infinity,
-                            height: 80, // Adjusted height for the image
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        const Expanded(
-                          child: Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Text(
-                              'Insignia Monsenor',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                              overflow: TextOverflow.ellipsis,
+              child: _badges.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                      itemCount: _badges.length,
+                      itemBuilder: (context, index) {
+                        final badge = _badges[index];
+                        return Card(
+                          child: ListTile(
+                            leading: Image.network(
+                              'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                                  badge['image'],
+                              width: 50,
+                              height: 50,
                             ),
+                            title: Text(badge['name'] ?? 'Unnamed Badge'),
                           ),
-                        ),
-                        
-                      ],
+                        );
+                      },
                     ),
-                    
-                  );
-                }),
-              ),
             ),
             const SizedBox(height: 15),
             const LogoutButton(),
