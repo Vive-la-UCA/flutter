@@ -3,6 +3,7 @@ import 'package:vive_la_uca/services/auth_service.dart';
 import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/services/badge_service.dart';
 import 'package:vive_la_uca/widgets/logout_button.dart';
+import 'package:vive_la_uca/widgets/simple_text.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -83,7 +84,12 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Vive la UCA'),
+        title: SimpleText(
+          text: 'Vive la UCA',
+          color: Theme.of(context).primaryColor,
+          fontSize: 20,
+          fontFamily: 'MontserratBold',
+        ),
         backgroundColor: Colors.white,
       ),
       body: Padding(
@@ -94,29 +100,31 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 30),
             const CircleAvatar(
               radius: 50,
-              backgroundImage: NetworkImage('https://via.placeholder.com/150'),
+              backgroundColor: Colors.white,
+              backgroundImage: NetworkImage(
+                  'https://cdn-icons-png.freepik.com/512/1144/1144760.png'),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 15),
             Text(
               _userName ?? 'Loading...',
               style: const TextStyle(
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 50),
+            const SizedBox(height: 30),
             const Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'Mis Insignias',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.orange,
                 ),
               ),
             ),
-            const SizedBox(height: 25),
+            const SizedBox(height: 20),
             Expanded(
               child: _badges.isEmpty
                   ? const Center(child: CircularProgressIndicator())
