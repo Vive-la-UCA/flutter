@@ -1,3 +1,5 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vive_la_uca/services/token_service.dart';
@@ -6,28 +8,32 @@ import 'package:vive_la_uca/views/login_page.dart';
 import 'package:vive_la_uca/views/register_page.dart';
 import 'package:vive_la_uca/views/splash_screen.dart';
 
-void main() {
-  runApp( MyApp());
-  loadToken();
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // If you're going to use other Firebase services in the background, initialize them before using them
+  await Firebase.initializeApp();
+  print('Handling a background message: ${message.messageId}');
 }
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  loadToken();
+  runApp(const MyApp());
+}
+
 bool isLoggedIn = false;
 void loadToken() async {
-    final token = await TokenStorage.getToken();
-    if (token != null) {
-      isLoggedIn=true;
-    }else{
-      isLoggedIn = false;
-    }
-
+  final token = await TokenStorage.getToken();
+  if (token != null) {
+    isLoggedIn = true;
+  } else {
+    isLoggedIn = false;
   }
-
-
-
+}
 
 class MyApp extends StatelessWidget {
-  
-   MyApp({super.key});
-  
+  const MyApp({super.key});
 
   // This widget is the root of your application.
   @override
@@ -43,25 +49,17 @@ class MyApp extends StatelessWidget {
   }
 }
 
-
-
 final GoRouter _router = GoRouter(
-
-  redirect:(context, state){
-    if(isLoggedIn){
-      return "/home";
-    }
-    return null;
-  },
-  
-  routes: [
-    GoRoute(path: '/', builder: (context,state) => const SplashScreen()),
-    GoRoute(path: '/home', builder: (context,state) => const HomePage()),
-    GoRoute(path: '/login', builder: (context,state) => const LoginPage()),
-    GoRoute(path: '/register', builder: (context,state) => const RegisterPage()),
-  ]
-
-  
-);
-
-  
+    redirect: (context, state) {
+      if (isLoggedIn) {
+        return "/home";
+      }
+      return null;
+    },
+    routes: [
+      GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
+      GoRoute(path: '/home', builder: (context, state) => const HomePage()),
+      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+      GoRoute(
+          path: '/register', builder: (context, state) => const RegisterPage()),
+    ]);
