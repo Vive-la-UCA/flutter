@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
+import 'package:geolocator/geolocator.dart';
 import 'package:vive_la_uca/services/location_service.dart';
 
 class MapPage extends StatefulWidget {
@@ -27,20 +28,20 @@ class _MapPageState extends State<MapPage> {
 
   final List<Map<String, dynamic>> locations = [
     {
-      'name': 'Localidad',
-      'coordinates': const LatLng(13.6801424, -89.2358217),
+      'name': 'Calle',
+      'coordinates': const LatLng(13.733717, -89.733932),
       'imageUrl':
           'https://lh5.googleusercontent.com/p/AF1QipOaJTAczEMQP-iabIc4yxaiy9AOg2lLNs-3MqWU=w408-h544-k-no',
     },
     {
-      'name': 'Location 5',
-      'coordinates': const LatLng(13.730928, -89.730464),
+      'name': 'Academia',
+      'coordinates': const LatLng(13.6794955, -89.2843491),
       'imageUrl':
           'https://i.pinimg.com/236x/e2/91/62/e29162cb17247e676d3e3a2ca2c93783.jpg',
     },
     {
       'name': 'Location 4',
-      'coordinates': const LatLng(13.734986, -89.734158),
+      'coordinates': const LatLng(13.736812, -89.734058),
       'imageUrl':
           'https://i.pinimg.com/236x/e2/91/62/e29162cb17247e676d3e3a2ca2c93783.jpg',
     },
@@ -50,18 +51,69 @@ class _MapPageState extends State<MapPage> {
   void initState() {
     super.initState();
     _determinePosition();
+
+    Geolocator.getPositionStream(
+            locationSettings: const LocationSettings(
+                accuracy: LocationAccuracy.high, distanceFilter: 1))
+        .listen((Position position) {
+      setState(() {
+        currentLocation = LatLng(position.latitude, position.longitude);
+      });
+      _checkProximity();
+    });
   }
 
   Future<void> _determinePosition() async {
     try {
-      LatLng location = await LocationService.determinePosition();
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+
       setState(() {
-        currentLocation = const LatLng(13.6794043, -89.2364737); //! QUEMADA
+        currentLocation = LatLng(position.latitude, position.longitude);
       });
       _calculateRoute();
+      _checkProximity();
     } catch (e) {
-      print(e);
+      // Excepcion
     }
+  }
+
+  void _checkProximity() {
+    if (currentLocation == null) return;
+
+    for (var location in locations) {
+      double distance = Geolocator.distanceBetween(
+        currentLocation!.latitude,
+        currentLocation!.longitude,
+        location['coordinates'].latitude,
+        location['coordinates'].longitude,
+      );
+
+      if (distance <= 5.0) {
+        _showProximityAlert(location['name']);
+      }
+    }
+  }
+
+  void _showProximityAlert(String locationName) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Estás cerca de $locationName'),
+          content: const Text(
+              'Has entrado en el radio de 5 metros de esta ubicación.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _calculateRoute() async {
