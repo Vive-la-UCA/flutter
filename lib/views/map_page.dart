@@ -75,7 +75,7 @@ class _MapPageState extends State<MapPage> {
         .join(';');
 
     String url =
-        'https://7n8zjbzf-5000.use2.devtunnels.ms/route/v1/foot/$coordinates?geometries=geojson';
+        'https://dei.uca.edu.sv/routing/route/v1/foot/$coordinates?geometries=geojson';
 
     var response = await http.get(Uri.parse(url));
 
