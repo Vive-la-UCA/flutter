@@ -23,7 +23,7 @@ class _MapPageState extends State<MapPage> {
   Set<String> visitedLocations =
       {}; // Conjunto para rastrear ubicaciones visitadas
   Position? _previousPosition;
-  List<LatLng> _locationHistory = [];
+  final List<LatLng> _locationHistory = [];
   static const int historyLength = 5; // Número de puntos para suavizar
   static const double minDistance = 1.0; // Umbral mínimo de distancia en metr
 
