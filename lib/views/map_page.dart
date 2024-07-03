@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:vive_la_uca/services/location_service.dart';
+import 'package:vive_la_uca/widgets/dialog_route.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({Key? key}) : super(key: key);
@@ -18,6 +19,13 @@ class _MapPageState extends State<MapPage> {
   LatLng? currentLocation = const LatLng(13.679849, -89.236252);
   final MapController _mapController = MapController();
   List<LatLng> _routePoints = [];
+
+  Set<String> visitedLocations =
+      {}; // Conjunto para rastrear ubicaciones visitadas
+  Position? _previousPosition;
+  List<LatLng> _locationHistory = [];
+  static const int historyLength = 5; // Número de puntos para suavizar
+  static const double minDistance = 1.0; // Umbral mínimo de distancia en metr
 
   // Define una lista de coordenadas personalizadas para la ruta
   final List<LatLng> customCoordinates = [
@@ -53,20 +61,53 @@ class _MapPageState extends State<MapPage> {
     _determinePosition();
 
     Geolocator.getPositionStream(
-            locationSettings: const LocationSettings(
-                accuracy: LocationAccuracy.high, distanceFilter: 1))
-        .listen((Position position) {
-      setState(() {
-        currentLocation = LatLng(position.latitude, position.longitude);
-      });
-      _checkProximity();
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 0,
+      ),
+    ).listen((Position position) {
+      if (_previousPosition == null ||
+          Geolocator.distanceBetween(
+                _previousPosition!.latitude,
+                _previousPosition!.longitude,
+                position.latitude,
+                position.longitude,
+              ) >
+              minDistance) {
+        LatLng smoothedLocation = _getSmoothedLocation(
+          LatLng(position.latitude, position.longitude),
+        );
+        setState(() {
+          currentLocation = smoothedLocation;
+          _previousPosition = position;
+        });
+        _checkProximity();
+      }
     });
+  }
+
+  LatLng _getSmoothedLocation(LatLng newLocation) {
+    _locationHistory.add(newLocation);
+    if (_locationHistory.length > historyLength) {
+      _locationHistory.removeAt(0);
+    }
+
+    double avgLat = 0;
+    double avgLng = 0;
+    for (var loc in _locationHistory) {
+      avgLat += loc.latitude;
+      avgLng += loc.longitude;
+    }
+    avgLat /= _locationHistory.length;
+    avgLng /= _locationHistory.length;
+
+    return LatLng(avgLat, avgLng);
   }
 
   Future<void> _determinePosition() async {
     try {
       Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
+          desiredAccuracy: LocationAccuracy.bestForNavigation);
 
       setState(() {
         currentLocation = LatLng(position.latitude, position.longitude);
@@ -99,19 +140,7 @@ class _MapPageState extends State<MapPage> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Estás cerca de $locationName'),
-          content: const Text(
-              'Has entrado en el radio de 5 metros de esta ubicación.'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
+        return CustomDialog(locationName: locationName);
       },
     );
   }
