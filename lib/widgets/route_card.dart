@@ -7,61 +7,66 @@ class RouteCard extends StatelessWidget {
   final String distance;
 
   const RouteCard({
-    Key? key,
+    super.key,
     required this.imagePath,
     required this.title,
     required this.description,
     required this.distance,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Image.asset(
-            imagePath,
-            height: 150, // Altura fija para la imagen
-            width: double.infinity, // La imagen ocupa todo el ancho de la tarjeta
-            fit: BoxFit.cover, // La imagen se ajusta cubriendo completamente el espacio asignado
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                  title,
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
-                ),
-
-                Text(
-                  distance,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold,),
-                ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  description,
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 10),
-                
-              ],
+    return Container(
+      color: Colors.white,
+      
+      width: 330,  // Anchura fija para la tarjeta en un ListView horizontal
+      child: Card(
+        color: Colors.white,
+        
+        elevation: 5,  // Ajusta este valor para controlar la profundidad de la sombra
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Image.network(
+              imagePath,
+              height: 150, // Altura fija para la imagen
+              width: double.infinity, // La imagen ocupa todo el ancho de la tarjeta
+              fit: BoxFit.cover, // La imagen se ajusta cubriendo completamente el espacio asignado
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
+                      ),
+                      Text(
+                        distance,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    description,
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

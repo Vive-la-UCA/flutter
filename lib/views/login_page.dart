@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:vive_la_uca/views/home_page.dart';
+import 'package:go_router/go_router.dart';
+import 'package:vive_la_uca/services/token_service.dart';
 import '../controllers/login_controller.dart';
+import '../widgets/auth_field.dart';
+import '../widgets/form_button.dart';
+import '../widgets/register_question.dart';
+import '../widgets/simple_text.dart';
+import 'package:vive_la_uca/services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
   @override
+  // ignore: library_private_types_in_public_api
   _LoginPageState createState() => _LoginPageState();
 }
 
@@ -12,15 +21,53 @@ class _LoginPageState extends State<LoginPage> {
   final LoginController _controller = LoginController();
 
   void _toRegister() {
-    Navigator.pushNamed(context, '/register');
+    GoRouter.of(context).replace('/register');
   }
 
-  void _login() {
+  void _login() async {
     if (_formKey.currentState!.validate()) {
-      print('Email: ${_controller.emailController.text}, Password: ${_controller.passwordController.text}');
-      Navigator.of(context)
-          .pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+      // Navigator.of(context)
+      //     .pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+
+      final email = _controller.emailController.text;
+      final password = _controller.passwordController.text;
+
+      try {
+        // final authService = AuthService(
+        //     baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
+
+        final authService =
+            AuthService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
+        final result = await authService.login(email, password);
+
+        if (result.containsKey('token')) {
+          await TokenStorage.saveToken(result['token']);
+          GoRouter.of(context).replace('/home');
+        } else {
+          _showErrorDialog('Failed to login: ${result['message']}');
+        }
+      } catch (e) {
+        _showErrorDialog('Check credentials and try again.');
+      }
     }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -36,14 +83,18 @@ class _LoginPageState extends State<LoginPage> {
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color.fromARGB(255, 21, 38, 80), Color.fromARGB(255, 21, 38, 100)],
+            colors: [
+              Color.fromARGB(255, 21, 38, 80),
+              Color.fromARGB(255, 21, 38, 100)
+            ],
             begin: Alignment.topRight,
             end: Alignment.bottomLeft,
           ),
         ),
         child: SingleChildScrollView(
           child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height),
+            constraints:
+                BoxConstraints(minHeight: MediaQuery.of(context).size.height),
             child: IntrinsicHeight(
               child: Form(
                 key: _formKey,
@@ -54,106 +105,22 @@ class _LoginPageState extends State<LoginPage> {
                       image: AssetImage('lib/assets/images/logo.png'),
                       height: 300,
                     ),
-                    const Text(
-                      'Inicio de sesión',
-                      style: TextStyle(
-                        fontSize: 24.0,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
-                    ),
+                    const SimpleText(text: 'Inicio de sesión'),
                     const SizedBox(height: 15),
-                    TextFormField(
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
-                      controller: _controller.emailController,
-                      decoration: const InputDecoration(
+                    AuthField(
+                        controller: _controller.emailController,
                         labelText: 'Correo electrónico',
-                        labelStyle: TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: Colors.white,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2.0),
-                        ),
-                      ),
-                      validator: _controller.validateEmail,
-                    ),
+                        validator: _controller.validateEmail),
                     const SizedBox(height: 15),
-                    TextFormField(
-                      controller: _controller.passwordController,
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
-                      obscureText: true,
-                      decoration: const InputDecoration(
+                    AuthField(
+                        controller: _controller.passwordController,
                         labelText: 'Contraseña',
-                        labelStyle: TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: Colors.white,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red),
-                        ),
-                      ),
-                      validator: _controller.validatePassword,
-                    ),
+                        validator: _controller.validatePassword,
+                        obscureText: true),
                     const SizedBox(height: 30),
-                    ElevatedButton(
-                      onPressed: _login,
-                      child: const Text(
-                        'Iniciar sesión',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Montserrat',
-                          fontSize: 18,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
+                    FormButton(text: 'Iniciar sesión', onPressed: _login),
                     const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'No tienes cuenta?',
-                          style: TextStyle(
-                            fontSize: 16.0,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Montserrat',
-                            color: Colors.white,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: _toRegister,
-                          child: const Text('Registrate aqui!',
-                            style: TextStyle(
-                              fontSize: 16.0,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Montserrat',
-                              color: Colors.blue,
-                            )
-                          )
-                        )
-                      ],
-                    )
+                    RegisterQuestion(onRegisterPressed: _toRegister),
                   ],
                 ),
               ),

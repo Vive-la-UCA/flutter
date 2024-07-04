@@ -1,12 +1,14 @@
-import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/controllers/register_controller.dart';
-import 'package:vive_la_uca/views/home_page.dart';
+import '../widgets/auth_field.dart';
+import '../widgets/form_button.dart';
+import '../widgets/simple_text.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({Key? key}) : super(key: key);
+  const RegisterPage({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _RegisterPageState createState() => _RegisterPageState();
 }
 
@@ -14,14 +16,12 @@ class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final RegisterController _controller = RegisterController();
 
-
   void _register() {
     if (_formKey.currentState!.validate()) {
-      print('Email: ${_controller.emailController.text}, Password: ${_controller.passwordController.text}'); // Debug
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+      _controller.register(context);
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -52,164 +52,39 @@ class _RegisterPageState extends State<RegisterPage> {
                       image: AssetImage('lib/assets/images/logo.png'),
                       height: 200,
                     ),
-                    const Text(
-                      'Registro',
-                      style: TextStyle(
-                        fontSize: 24.0,
-                        fontWeight: FontWeight.w800,
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
-                    ),
+                    const SimpleText(text: 'Registro'),
                     const SizedBox(height: 15),
-                    TextFormField(
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
-                      controller: _controller.nameController,
-                      validator: (value){
-                        if(value == null || value.isEmpty ){
-                          return 'Ingrese un nombre de usuario';
-
-                        }
-                      },
-                      decoration: const InputDecoration(
-                        labelText: 'Nombre',
-                        labelStyle: TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: Colors.white,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2.0),
-                        ),
-                      ),
-                    ),
+                    AuthField(
+                        controller: _controller.nameController,
+                        labelText: "Nombre completo",
+                        validator: _controller.validateName),
                     const SizedBox(
                       height: 15,
                     ),
-                    TextFormField(
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
-                      controller: _controller.emailController,
-                      decoration: const InputDecoration(
+                    AuthField(
+                        controller: _controller.emailController,
                         labelText: 'Correo electrónico',
-                        labelStyle: TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: Colors.white,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2.0),
-                        ),
-                      ),
-                      validator: _controller.validateEmail,
+                        validator: _controller.validateEmail),
+                    const SizedBox(
+                      height: 15,
                     ),
-                    const SizedBox(height: 15),
-                    TextFormField(
+                    AuthField(
                       controller: _controller.passwordController,
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
+                      labelText: 'Contraseña',
+                      validator: _controller.validatePassword,
                       obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Contraseña',
-                        labelStyle: TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: Colors.white,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return 'Por favor ingrese su contraseña';
-                        }
-                        if(value!=_controller.repeatPasswordController.text){
-                          return 'Las contraseñas deben ser iguales';
-                        }
-                        return null;
-                      },
                     ),
                     const SizedBox(
                       height: 15,
                     ),
-                    TextFormField(
+                    AuthField(
                       controller: _controller.repeatPasswordController,
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        color: Colors.white,
-                      ),
+                      labelText: 'Repite la contraseña',
+                      validator: _controller.validateRepeatPassword,
                       obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Contraseña',
-                        labelStyle: TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: Colors.white,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.white, width: 1.0),
-                        ),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return 'Por favor ingrese su contraseña';
-                        } else if(value != _controller.passwordController.text){
-                          return 'Las contraseñas deben ser iguales';
-                        }
-                        return null;
-                      },
                     ),
                     const SizedBox(height: 30),
-                    ElevatedButton(
-                      onPressed: _register,
-                      child: const Text(
-                        'Registrarse',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Montserrat',
-                          fontSize: 18,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
+                    FormButton(text: 'Registrarse', onPressed: _register),
                   ],
                 ),
               ),
