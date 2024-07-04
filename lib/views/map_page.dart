@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:vive_la_uca/widgets/dialog_route.dart';
 import 'package:vive_la_uca/widgets/map_teselia.dart';
 import 'package:vive_la_uca/widgets/current_location_button.dart';
@@ -55,7 +56,37 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
-    _determinePosition();
+    _requestLocationPermission();
+  }
+
+  Future<void> _requestLocationPermission() async {
+    var status = await Permission.location.status;
+    if (status.isDenied || status.isPermanentlyDenied) {
+      if (await Permission.location.request().isGranted) {
+        _determinePosition();
+      } else {
+        openAppSettings();
+      }
+    } else {
+      _determinePosition();
+    }
+  }
+
+  Future<void> _determinePosition() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.bestForNavigation);
+      setState(() {
+        currentLocation = LatLng(position.latitude, position.longitude);
+        _mapController.move(
+            currentLocation!, 18.0); // Mueve el mapa a la ubicación actual
+      });
+      _calculateRoute();
+      _checkProximity();
+    } catch (e) {
+      // Handle exception
+    }
+
     Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.bestForNavigation,
@@ -96,22 +127,6 @@ class _MapPageState extends State<MapPage> {
     avgLat /= _locationHistory.length;
     avgLng /= _locationHistory.length;
     return LatLng(avgLat, avgLng);
-  }
-
-  Future<void> _determinePosition() async {
-    try {
-      Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.bestForNavigation);
-      setState(() {
-        currentLocation = LatLng(position.latitude, position.longitude);
-        _mapController.move(
-            currentLocation!, 18.0); // Mueve el mapa a la ubicación actual
-      });
-      _calculateRoute();
-      _checkProximity();
-    } catch (e) {
-      // Excepcion
-    }
   }
 
   void _checkProximity() {
