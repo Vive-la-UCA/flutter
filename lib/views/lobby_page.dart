@@ -33,7 +33,7 @@ class _LobbyPageState extends State<LobbyPage> {
                 .getRoutes(token);
         futureLocations =
             LocationService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
-                .getRoutes(token);
+                .getLocations(token);
         print(futureLocations);
         _isLoading = false; // Actualizar estado de carga
       });

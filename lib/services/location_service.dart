@@ -6,7 +6,7 @@ class LocationService {
 
   LocationService({required this.baseUrl});
 
-  Future<List<dynamic>> getRoutes(tokenKey) async {
+  Future<List<dynamic>> getLocations(tokenKey) async {
     final url = Uri.parse('$baseUrl/api/location');
     final response = await http.get(
       url,
