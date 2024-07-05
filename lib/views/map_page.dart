@@ -8,7 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:vive_la_uca/services/location_service.dart';
 import 'package:vive_la_uca/widgets/dialog_route.dart';
 import 'package:vive_la_uca/services/token_service.dart';
-
+import 'package:vive_la_uca/services/route_service.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({Key? key}) : super(key: key);
@@ -22,19 +22,14 @@ class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   List<LatLng> _routePoints = [];
 
-  Set<String> visitedLocations =
-      {}; // Conjunto para rastrear ubicaciones visitadas
+  Set<String> visitedLocations = {}; // Conjunto para rastrear ubicaciones visitadas
   Position? _previousPosition;
   final List<LatLng> _locationHistory = [];
   static const int historyLength = 5; // Número de puntos para suavizar
   static const double minDistance = 1.0; // Umbral mínimo de distancia en metr
 
   // Define una lista de coordenadas personalizadas para la ruta
-  final List<LatLng> customCoordinates = [
-    const LatLng(13.6799237, -89.2362585),
-    const LatLng(13.6807665, -89.2357817),
-    const LatLng(13.678844850811696, -89.23629600872326)
-  ];
+  List<LatLng> customCoordinates = [];
 
   List<Map<String, dynamic>> locations = [];
 
@@ -73,18 +68,32 @@ class _MapPageState extends State<MapPage> {
   void _loadToken() async {
     final token = await TokenStorage.getToken();
     if (token != null) {
-      final response = await LocationService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
+      final routeService = RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
+      
+      // Aquí obtienes la ruta por ID y sus ubicaciones
+      final routeId = '66822e32e6528f703bb47ffa'; // Reemplaza con el ID de la ruta que necesitas
+      final routeResponse = await routeService.getOneRoute(token, routeId);
+      final routeLocations = routeResponse['locations'];
+
+      // Extrae las coordenadas de las ubicaciones y las guarda en customCoordinates
+      setState(() {
+        customCoordinates = routeLocations.map<LatLng>((location) {
+          return LatLng(location['latitude'], location['longitude']);
+        }).toList();
+      });
+
+      // El resto del código para obtener las ubicaciones
+      final locationResponse = await LocationService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
           .getLocations(token);
-      if (response != null) {
+      if (locationResponse != null) {
         setState(() {
-          locations = response.map<Map<String, dynamic>>((location) {
+          locations = locationResponse.map<Map<String, dynamic>>((location) {
             return {
               'name': location['name'],
               'description': location['description'],
               'coordinates': LatLng(location['latitude'], location['longitude']),
               'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                                          location[
-                                              'image'], // Actualiza la URL base según sea necesario
+                                          location['image'], // Actualiza la URL base según sea necesario
             };
           }).toList();
           _calculateRoute(); // Calcular la ruta después de obtener las ubicaciones
