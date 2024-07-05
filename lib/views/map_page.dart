@@ -7,6 +7,8 @@ import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:vive_la_uca/services/location_service.dart';
 import 'package:vive_la_uca/widgets/dialog_route.dart';
+import 'package:vive_la_uca/services/token_service.dart';
+
 
 class MapPage extends StatefulWidget {
   const MapPage({Key? key}) : super(key: key);
@@ -34,32 +36,14 @@ class _MapPageState extends State<MapPage> {
     const LatLng(13.678844850811696, -89.23629600872326)
   ];
 
-  final List<Map<String, dynamic>> locations = [
-    {
-      'name': 'Calle',
-      'coordinates': const LatLng(13.733717, -89.733932),
-      'imageUrl':
-          'https://lh5.googleusercontent.com/p/AF1QipOaJTAczEMQP-iabIc4yxaiy9AOg2lLNs-3MqWU=w408-h544-k-no',
-    },
-    {
-      'name': 'Academia',
-      'coordinates': const LatLng(13.6794955, -89.2843491),
-      'imageUrl':
-          'https://i.pinimg.com/236x/e2/91/62/e29162cb17247e676d3e3a2ca2c93783.jpg',
-    },
-    {
-      'name': 'Location 4',
-      'coordinates': const LatLng(13.736812, -89.734058),
-      'imageUrl':
-          'https://i.pinimg.com/236x/e2/91/62/e29162cb17247e676d3e3a2ca2c93783.jpg',
-    },
-  ];
+  List<Map<String, dynamic>> locations = [];
 
   @override
   void initState() {
     super.initState();
     _determinePosition();
-
+    _loadToken();
+  
     Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.bestForNavigation,
@@ -84,6 +68,34 @@ class _MapPageState extends State<MapPage> {
         _checkProximity();
       }
     });
+  }
+
+  void _loadToken() async {
+    final token = await TokenStorage.getToken();
+    if (token != null) {
+      final response = await LocationService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
+          .getLocations(token);
+      if (response != null) {
+        setState(() {
+          locations = response.map<Map<String, dynamic>>((location) {
+            return {
+              'name': location['name'],
+              'description': location['description'],
+              'coordinates': LatLng(location['latitude'], location['longitude']),
+              'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                                          location[
+                                              'image'], // Actualiza la URL base según sea necesario
+            };
+          }).toList();
+          _calculateRoute(); // Calcular la ruta después de obtener las ubicaciones
+        });
+      }
+    } else {
+      setState(() {
+        // Manejo del error
+        print('Error al obtener el token');
+      });
+    }
   }
 
   LatLng _getSmoothedLocation(LatLng newLocation) {
