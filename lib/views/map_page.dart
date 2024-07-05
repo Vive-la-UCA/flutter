@@ -31,7 +31,9 @@ class _MapPageState extends State<MapPage> {
   String? _currentAlertLocation; // Variable para rastrear la ubicación actual de alerta
 
   // Define una lista de coordenadas personalizadas para la ruta
-  List<LatLng> customCoordinates = [];
+  List<LatLng> routeCoordinates = [];
+
+  List<Map<String, dynamic>> routeLocations = []; // Lista de ubicaciones de la ruta
 
   List<Map<String, dynamic>> locations = [];
 
@@ -77,16 +79,28 @@ class _MapPageState extends State<MapPage> {
       final routeId =
           '66822e32e6528f703bb47ffa'; // Reemplaza con el ID de la ruta que necesitas
       final routeResponse = await routeService.getOneRoute(token, routeId);
-      final routeLocations = routeResponse['locations'];
+      final locationsFromRoute = routeResponse['locations'];
 
-      // Extrae las coordenadas de las ubicaciones y las guarda en customCoordinates
+      // Extrae las coordenadas de las ubicaciones y las guarda en routeCoordinates
       setState(() {
-        customCoordinates = routeLocations.map<LatLng>((location) {
+        routeCoordinates = locationsFromRoute.map<LatLng>((location) {
           return LatLng(location['latitude'], location['longitude']);
+        }).toList();
+
+        // Guarda las ubicaciones de la ruta para proximidad
+        routeLocations = locationsFromRoute.map<Map<String, dynamic>>((location) {
+          return {
+            '_id': location['_id'], // Asegúrate de incluir el ID en cada ubicación
+            'name': location['name'],
+            'description': location['description'],
+            'coordinates': LatLng(location['latitude'], location['longitude']),
+            'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                location['image'], // Actualiza la URL base según sea necesario
+          };
         }).toList();
       });
 
-      // El resto del código para obtener las ubicaciones
+      // El resto del código para obtener todas las ubicaciones
       final locationResponse = await LocationService(
               baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
           .getAllLocations(token);
@@ -95,13 +109,12 @@ class _MapPageState extends State<MapPage> {
         setState(() {
           locations = locationResponse.map<Map<String, dynamic>>((location) {
             return {
+              '_id': location['_id'],
               'name': location['name'],
               'description': location['description'],
-              'coordinates':
-                  LatLng(location['latitude'], location['longitude']),
+              'coordinates': LatLng(location['latitude'], location['longitude']),
               'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                  location[
-                      'image'], // Actualiza la URL base según sea necesario
+                  location['image'], // Actualiza la URL base según sea necesario
             };
           }).toList();
           _calculateRoute(); // Calcular la ruta después de obtener las ubicaciones
@@ -151,7 +164,7 @@ class _MapPageState extends State<MapPage> {
   void _checkProximity() {
     if (currentLocation == null) return;
 
-    for (var location in locations) {
+    for (var location in routeLocations) {
       double distance = Geolocator.distanceBetween(
         currentLocation!.latitude,
         currentLocation!.longitude,
@@ -160,7 +173,7 @@ class _MapPageState extends State<MapPage> {
       );
 
       if (distance <= 10.0 && !visitedLocations.contains(location['_id'])) {
-        _showProximityAlert(location['_id']);
+        _showProximityAlert(location['name']); // O cambiar a '_id' si prefieres usar el ID
         visitedLocations.add(location['_id']);
         break;
       }
@@ -187,7 +200,7 @@ class _MapPageState extends State<MapPage> {
   void _calculateRoute() async {
     if (currentLocation == null) return;
 
-    List<LatLng> waypoints = [currentLocation!, ...customCoordinates];
+    List<LatLng> waypoints = [currentLocation!, ...routeCoordinates];
 
     // Crear una lista de coordenadas para la URL
     String coordinates = waypoints
