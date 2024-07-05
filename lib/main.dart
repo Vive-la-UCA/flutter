@@ -7,6 +7,7 @@ import 'package:vive_la_uca/views/home_page.dart';
 import 'package:vive_la_uca/views/login_page.dart';
 import 'package:vive_la_uca/views/register_page.dart';
 import 'package:vive_la_uca/views/splash_screen.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // If you're going to use other Firebase services in the background, initialize them before using them
@@ -19,6 +20,8 @@ void main() async {
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   loadToken();
+  await FMTCObjectBoxBackend().initialise();
+  await const FMTCStore('mapStore').manage.create();
   runApp(const MyApp());
 }
 

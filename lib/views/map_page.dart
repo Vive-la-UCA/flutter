@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
@@ -22,7 +23,8 @@ class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   List<LatLng> _routePoints = [];
 
-  Set<String> visitedLocations = {}; // Conjunto para rastrear ubicaciones visitadas
+  Set<String> visitedLocations =
+      {}; // Conjunto para rastrear ubicaciones visitadas
   Position? _previousPosition;
   final List<LatLng> _locationHistory = [];
   static const int historyLength = 5; // Número de puntos para suavizar
@@ -38,7 +40,7 @@ class _MapPageState extends State<MapPage> {
     super.initState();
     _determinePosition();
     _loadToken();
-  
+
     Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.bestForNavigation,
@@ -68,10 +70,12 @@ class _MapPageState extends State<MapPage> {
   void _loadToken() async {
     final token = await TokenStorage.getToken();
     if (token != null) {
-      final routeService = RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
-      
+      final routeService =
+          RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
+
       // Aquí obtienes la ruta por ID y sus ubicaciones
-      final routeId = '66822e32e6528f703bb47ffa'; // Reemplaza con el ID de la ruta que necesitas
+      final routeId =
+          '66822e32e6528f703bb47ffa'; // Reemplaza con el ID de la ruta que necesitas
       final routeResponse = await routeService.getOneRoute(token, routeId);
       final routeLocations = routeResponse['locations'];
 
@@ -83,7 +87,8 @@ class _MapPageState extends State<MapPage> {
       });
 
       // El resto del código para obtener las ubicaciones
-      final locationResponse = await LocationService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
+      final locationResponse = await LocationService(
+              baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
           .getLocations(token);
       if (locationResponse != null) {
         setState(() {
@@ -91,9 +96,11 @@ class _MapPageState extends State<MapPage> {
             return {
               'name': location['name'],
               'description': location['description'],
-              'coordinates': LatLng(location['latitude'], location['longitude']),
+              'coordinates':
+                  LatLng(location['latitude'], location['longitude']),
               'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                                          location['image'], // Actualiza la URL base según sea necesario
+                  location[
+                      'image'], // Actualiza la URL base según sea necesario
             };
           }).toList();
           _calculateRoute(); // Calcular la ruta después de obtener las ubicaciones
@@ -216,6 +223,8 @@ class _MapPageState extends State<MapPage> {
               children: [
                 TileLayer(
                   urlTemplate: 'http://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.vive_la_uca',
+                  tileProvider: const FMTCStore('mapStore').getTileProvider(),
                 ),
                 // Capa de fondo de la línea
                 PolylineLayer(
