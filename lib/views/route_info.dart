@@ -10,52 +10,78 @@ class RouteInfo extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Imagen Principal
-            Image.network(
-              'https://via.placeholder.com/400x300',
-              width: double.infinity,
-              height: 300,
-              fit: BoxFit.cover,
-            ),
-            // Título y Duración
-            Container(
-              padding: EdgeInsets.all(16.0),
-              child:  Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Ruta Romero',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24,
-                      color: Theme.of(context).primaryColor,
+            // Stack para colocar el texto y los botones sobre la imagen
+            Stack(
+              alignment: Alignment.bottomLeft,
+              children: [
+                // Imagen Principal
+                Image.network(
+                  'https://via.placeholder.com/400x300',
+                  width: double.infinity,
+                  height: 300,
+                  fit: BoxFit.cover,
+                ),
+                // Contenedor para el título y el botón, con un gradiente de fondo
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.7), // Más opacidad en la parte inferior
+                        Colors.transparent // Transparente hacia la parte superior
+                      ],
                     ),
                   ),
-                  Row(
+                  padding: const EdgeInsets.all(16.0),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.play_arrow, color: Colors.orange),
-                      Text(' Empezar '),
-                      Icon(Icons.access_time, color: Colors.grey),
-                      Text('3 min (500 m)'),
+                      Text(
+                        'Ruta Romero',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 24,
+                          color: Colors.white, // Texto blanco para contraste
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.play_arrow, color: Colors.orange),
+                          Text(' Empezar ', style: TextStyle(color: Colors.white)),
+                          
+                         
+                        ],
+                      ),
                     ],
                   ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.',
-                    style: TextStyle(fontSize: 16),
-                    textAlign: TextAlign.justify,
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    'Lugares de esta ruta',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+                ),
+              ],
+            ),
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text(
+                'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.',
+                style: TextStyle(fontSize: 16),
+                textAlign: TextAlign.justify,
               ),
             ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16.0, 0, 16.0, 0),
+              child:  Text(
+              'Lugares de esta ruta',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.left,
+             // padding: EdgeInsets.symmetric(horizontal: 16.0),
+            ),
+            ),
+           
+            SizedBox(height: 10),
             // Lista de lugares
             Container(
               height: 300,
@@ -64,12 +90,7 @@ class RouteInfo extends StatelessWidget {
                 children: [
                   _buildPlaceCard('Centro Monseñor Romero', 'https://via.placeholder.com/100'),
                   _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
-                  _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
-                  _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
-                  _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
-                  _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
-                  _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
-                  _buildPlaceCard('M', 'https://via.placeholder.com/100'),
+                  // Añade más tarjetas según sea necesario
                 ],
               ),
             ),
