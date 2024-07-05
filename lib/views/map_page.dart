@@ -23,12 +23,12 @@ class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   List<LatLng> _routePoints = [];
 
-  Set<String> visitedLocations =
-      {}; // Conjunto para rastrear ubicaciones visitadas
+  Set<String> visitedLocations = {}; // Conjunto para rastrear ubicaciones visitadas
   Position? _previousPosition;
   final List<LatLng> _locationHistory = [];
   static const int historyLength = 5; // Número de puntos para suavizar
-  static const double minDistance = 1.0; // Umbral mínimo de distancia en metr
+  static const double minDistance = 1.0; // Umbral mínimo de distancia en metros
+  String? _currentAlertLocation; // Variable para rastrear la ubicación actual de alerta
 
   // Define una lista de coordenadas personalizadas para la ruta
   List<LatLng> customCoordinates = [];
@@ -89,8 +89,9 @@ class _MapPageState extends State<MapPage> {
       // El resto del código para obtener las ubicaciones
       final locationResponse = await LocationService(
               baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
-          .getLocations(token);
+          .getAllLocations(token);
       if (locationResponse != null) {
+         print('Location Response: ${locationResponse.length} locations'); // Añadir esta línea
         setState(() {
           locations = locationResponse.map<Map<String, dynamic>>((location) {
             return {
@@ -158,19 +159,29 @@ class _MapPageState extends State<MapPage> {
         location['coordinates'].longitude,
       );
 
-      if (distance <= 5.0) {
-        _showProximityAlert(location['name']);
+      if (distance <= 10.0 && !visitedLocations.contains(location['_id'])) {
+        _showProximityAlert(location['_id']);
+        visitedLocations.add(location['_id']);
+        break;
       }
-    }
+    } 
   }
 
   void _showProximityAlert(String locationName) {
+    setState(() {
+      _currentAlertLocation = locationName;
+    });
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return CustomDialog(locationName: locationName);
       },
-    );
+    ).then((_) {
+      setState(() {
+        _currentAlertLocation = null;
+      });
+    });
   }
 
   void _calculateRoute() async {
