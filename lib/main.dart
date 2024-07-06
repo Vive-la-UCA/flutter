@@ -6,6 +6,7 @@ import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/views/home_page.dart';
 import 'package:vive_la_uca/views/login_page.dart';
 import 'package:vive_la_uca/views/register_page.dart';
+import 'package:vive_la_uca/views/route_info.dart';
 import 'package:vive_la_uca/views/splash_screen.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -50,16 +51,25 @@ class MyApp extends StatelessWidget {
 }
 
 final GoRouter _router = GoRouter(
-    redirect: (context, state) {
-      if (isLoggedIn) {
-        return "/home";
-      }
-      return null;
-    },
-    routes: [
-      GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
-      GoRoute(path: '/home', builder: (context, state) => const HomePage()),
-      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
-      GoRoute(
-          path: '/register', builder: (context, state) => const RegisterPage()),
-    ]);
+  redirect: (context, state) {
+    final loggedIn = isLoggedIn;  // Check if the user is logged in
+    final goingToLogin = state.subloc == '/login';
+
+    if (loggedIn && goingToLogin) {
+      // If logged in and trying to go to login, redirect to home
+      return "/home";
+    } else if (!loggedIn && state.subloc != '/login' && state.subloc != '/') {
+      // If not logged in and trying to access a protected route, redirect to login
+      return "/login";
+    }
+    // No redirection needed
+    return null;
+  },
+  routes: [
+    GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
+    GoRoute(path: '/home', builder: (context, state) => const HomePage()),
+    GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+    GoRoute(path: '/route', builder: (context, state) => const RouteInfo()),
+    GoRoute(path: '/register', builder: (context, state) => const RegisterPage()),
+  ],
+);

@@ -70,7 +70,7 @@ class _LobbyPageState extends State<LobbyPage> {
                   fontWeight: FontWeight.w500,
                   textAlign: TextAlign.justify),
               const SizedBox(height: 15),
-              const SearchingBar(),
+           
               const SizedBox(height: 15),
               const SimpleText(
                   text: 'Rutas populares',
@@ -101,12 +101,11 @@ class _LobbyPageState extends State<LobbyPage> {
                                 var route = snapshot.data![index];
                                 return RouteCard(
                                   imagePath:
-                                      'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                                          route[
-                                              'image'], // Asegura que la URL es correcta
+                                      'https://vivelauca.uca.edu.sv/admin-back/uploads/' + route['image'], // Asegura que la URL es correcta
                                   title: route['name'],
                                   description: route['description'],
                                   distance: '5 km',
+                                  redirect: '/route',
                                 );
                               },
                             ),
@@ -152,6 +151,7 @@ class _LobbyPageState extends State<LobbyPage> {
                                   title: location['name'],
                                   description: location['description'],
                                   distance: '5 km',
+                                  redirect: '/home',
                                 );
                               },
                             ),
