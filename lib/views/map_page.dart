@@ -10,6 +10,7 @@ import 'package:vive_la_uca/services/location_service.dart';
 import 'package:vive_la_uca/widgets/dialog_route.dart';
 import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/services/route_service.dart';
+import 'package:vive_la_uca/widgets/location_details_bottomsheet.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({Key? key}) : super(key: key);
@@ -67,6 +68,16 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
+  void _showLocationDetails(Map<String, dynamic> location) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return LocationDetailsBottomSheet(location: location);
+      },
+    );
+  }
+
   void _loadToken() async {
     final token = await TokenStorage.getToken();
     if (token != null) {
@@ -74,7 +85,7 @@ class _MapPageState extends State<MapPage> {
           RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
 
       // Aquí obtienes la ruta por ID y sus ubicaciones
-      final routeId =
+      const routeId =
           '66822e32e6528f703bb47ffa'; // Reemplaza con el ID de la ruta que necesitas
       final routeResponse = await routeService.getOneRoute(token, routeId);
       final routeLocations = routeResponse['locations'];
@@ -99,17 +110,15 @@ class _MapPageState extends State<MapPage> {
               'coordinates':
                   LatLng(location['latitude'], location['longitude']),
               'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                  location[
-                      'image'], // Actualiza la URL base según sea necesario
+                  location['image'],
             };
           }).toList();
-          _calculateRoute(); // Calcular la ruta después de obtener las ubicaciones
+          _calculateRoute();
         });
       }
     } else {
       setState(() {
-        // Manejo del error
-        print('Error al obtener el token');
+        //Exception
       });
     }
   }
@@ -196,7 +205,7 @@ class _MapPageState extends State<MapPage> {
             coordinates.map((point) => LatLng(point[1], point[0])).toList();
       });
     } else {
-      print('Failed to load route');
+      //Exception
     }
   }
 
@@ -258,61 +267,66 @@ class _MapPageState extends State<MapPage> {
                       point: location['coordinates'],
                       width: 100,
                       height: 100,
-                      child: Column(
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 4,
-                                  offset: Offset(0, 2),
+                      child: GestureDetector(
+                        onTap: () => _showLocationDetails(location),
+                        child: Column(
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                location['name'],
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.location_on,
+                                  color: Colors.orange,
+                                  size: 50,
+                                ),
+                                Positioned(
+                                  top: 8,
+                                  child: ClipOval(
+                                    child: Image.network(
+                                      location['imageUrl'],
+                                      width: 24,
+                                      height: 24,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return const Icon(
+                                          Icons.error,
+                                          color: Colors.red,
+                                          size: 24,
+                                        );
+                                      },
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
-                            child: Text(
-                              location['name'],
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              const Icon(
-                                Icons.location_on,
-                                color: Colors.orange,
-                                size: 50,
-                              ),
-                              Positioned(
-                                top: 8,
-                                child: ClipOval(
-                                  child: Image.network(
-                                    location['imageUrl'],
-                                    width: 24,
-                                    height: 24,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const Icon(
-                                        Icons.error,
-                                        color: Colors.red,
-                                        size: 24,
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   }).toList(),
@@ -338,8 +352,8 @@ class _MapPageState extends State<MapPage> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 6.0,
-        shape: CircleBorder(),
-        child: Icon(
+        shape: const CircleBorder(),
+        child: const Icon(
           Icons.my_location,
           size: 24.0, // Tamaño del icono más pequeño
         ),
