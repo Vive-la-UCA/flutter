@@ -78,8 +78,9 @@ class _RouteInfoState extends State<RouteInfo> {
                         child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.play_arrow, color: Colors.white),
+                          
                           Text(' Empezar ', style: TextStyle(color: Colors.white)),
+                          Icon(Icons.play_arrow, color: Colors.white),
                           
                         ],
                       ),
