@@ -11,6 +11,7 @@ import 'package:vive_la_uca/widgets/dialog_route.dart';
 import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/services/route_service.dart';
 import 'package:vive_la_uca/widgets/location_details_bottomsheet.dart';
+import 'package:vive_la_uca/widgets/location_marker.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({Key? key}) : super(key: key);
@@ -24,21 +25,15 @@ class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   List<LatLng> _routePoints = [];
 
-  Set<String> visitedLocations =
-      {}; // Conjunto para rastrear ubicaciones visitadas
+  Set<String> visitedLocations = {};
   Position? _previousPosition;
   final List<LatLng> _locationHistory = [];
-  static const int historyLength = 5; // Número de puntos para suavizar
-  static const double minDistance = 1.0; // Umbral mínimo de distancia en metros
-  String?
-      _currentAlertLocation; // Variable para rastrear la ubicación actual de alerta
+  static const int historyLength = 5;
+  static const double minDistance = 1.0;
+  String? _currentAlertLocation;
 
-  // Define una lista de coordenadas personalizadas para la ruta
   List<LatLng> routeCoordinates = [];
-
-  List<Map<String, dynamic>> routeLocations =
-      []; // Lista de ubicaciones de la ruta
-
+  List<Map<String, dynamic>> routeLocations = [];
   List<Map<String, dynamic>> locations = [];
 
   @override
@@ -89,40 +84,33 @@ class _MapPageState extends State<MapPage> {
       final routeService =
           RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
 
-      // Aquí obtienes la ruta por ID y sus ubicaciones
-      const routeId =
-          '66822e32e6528f703bb47ffa'; // Reemplaza con el ID de la ruta que necesitas
+      const routeId = '6688bfe1a454b9cd7b34d11a';
       final routeResponse = await routeService.getOneRoute(token, routeId);
       final locationsFromRoute = routeResponse['locations'];
 
-      // Extrae las coordenadas de las ubicaciones y las guarda en routeCoordinates
       setState(() {
         routeCoordinates = locationsFromRoute.map<LatLng>((location) {
           return LatLng(location['latitude'], location['longitude']);
         }).toList();
 
-        // Guarda las ubicaciones de la ruta para proximidad
         routeLocations =
             locationsFromRoute.map<Map<String, dynamic>>((location) {
           return {
-            '_id':
-                location['_id'], // Asegúrate de incluir el ID en cada ubicación
+            '_id': location['_id'],
             'name': location['name'],
             'description': location['description'],
             'coordinates': LatLng(location['latitude'], location['longitude']),
             'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                location['image'], // Actualiza la URL base según sea necesario
+                location['image'],
           };
         }).toList();
       });
 
-      // El resto del código para obtener todas las ubicaciones
       final locationResponse = await LocationService(
               baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
           .getAllLocations(token);
       if (locationResponse != null) {
-        print(
-            'Location Response: ${locationResponse.length} locations'); // Añadir esta línea
+        print('Location Response: ${locationResponse.length} locations');
         setState(() {
           locations = locationResponse.map<Map<String, dynamic>>((location) {
             return {
@@ -190,8 +178,7 @@ class _MapPageState extends State<MapPage> {
       );
 
       if (distance <= 10.0 && !visitedLocations.contains(location['_id'])) {
-        _showProximityAlert(
-            location['name']); // O cambiar a '_id' si prefieres usar el ID
+        _showProximityAlert(location['name']);
         visitedLocations.add(location['_id']);
         break;
       }
@@ -220,7 +207,6 @@ class _MapPageState extends State<MapPage> {
 
     List<LatLng> waypoints = [currentLocation!, ...routeCoordinates];
 
-    // Crear una lista de coordenadas para la URL
     String coordinates = waypoints
         .map((point) => '${point.longitude},${point.latitude}')
         .join(';');
@@ -268,101 +254,33 @@ class _MapPageState extends State<MapPage> {
                   userAgentPackageName: 'com.example.vive_la_uca',
                   tileProvider: const FMTCStore('mapStore').getTileProvider(),
                 ),
-                // Capa de fondo de la línea
                 PolylineLayer(
                   polylines: [
                     Polyline(
                       points: _routePoints,
-                      strokeWidth: 6.0, // Grosor del fondo de la línea
+                      strokeWidth: 6.0,
                       color: Colors.blue.shade100,
                       borderColor: Colors.blue.shade300,
-                      borderStrokeWidth: 5, // Color del fondo de la línea
+                      borderStrokeWidth: 5,
                       isDotted: false,
                     ),
                   ],
                 ),
-                // Capa de la línea punteada
                 PolylineLayer(
                   polylines: [
                     Polyline(
                       points: _routePoints,
-                      strokeWidth: 10.0, // Grosor de la línea punteada
+                      strokeWidth: 10.0,
                       color: const Color.fromARGB(255, 61, 122, 228),
                       borderColor: const Color.fromARGB(255, 51, 101, 187),
-                      borderStrokeWidth: 2, // Color de la línea punteada
+                      borderStrokeWidth: 2,
                       isDotted: true,
                     ),
                   ],
                 ),
                 MarkerLayer(
-                  markers: locations.map((location) {
-                    return Marker(
-                      point: location['coordinates'],
-                      width: 100,
-                      height: 100,
-                      child: GestureDetector(
-                        onTap: () => _showLocationDetails(location),
-                        child: Column(
-                          children: [
-                            Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 4,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Text(
-                                location['name'],
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                            Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.location_on,
-                                  color: Colors.orange,
-                                  size: 50,
-                                ),
-                                Positioned(
-                                  top: 8,
-                                  child: ClipOval(
-                                    child: Image.network(
-                                      location['imageUrl'],
-                                      width: 24,
-                                      height: 24,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                        return const Icon(
-                                          Icons.error,
-                                          color: Colors.red,
-                                          size: 24,
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                  markers: LocationMarkers.buildMarkers(
+                      locations, _showLocationDetails),
                 ),
                 CurrentLocationLayer(
                   style: const LocationMarkerStyle(
@@ -388,7 +306,7 @@ class _MapPageState extends State<MapPage> {
         shape: const CircleBorder(),
         child: const Icon(
           Icons.my_location,
-          size: 24.0, // Tamaño del icono más pequeño
+          size: 24.0,
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,

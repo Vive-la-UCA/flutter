@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+//*Constants
+const maxLargeSheet = 0.9;
+
 class LocationDetailsBottomSheet extends StatelessWidget {
   final Map<String, dynamic> location;
 
@@ -11,7 +14,7 @@ class LocationDetailsBottomSheet extends StatelessWidget {
     return ConstrainedBox(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height *
-            0.8, // 80% del tamaño de la pantalla
+            maxLargeSheet, // 80% del tamaño de la pantalla
       ),
       child: Container(
         decoration: const BoxDecoration(
@@ -86,9 +89,9 @@ class LocationDetailsBottomSheet extends StatelessWidget {
               child: Text(
                 location['name'],
                 style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange),
               ),
             ),
             const SizedBox(height: 8),
