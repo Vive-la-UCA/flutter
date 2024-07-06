@@ -22,7 +22,6 @@ class MapPage extends StatefulWidget {
   _MapPageState createState() => _MapPageState();
 }
 
-
 class _MapPageState extends State<MapPage> {
   LatLng? currentLocation;
   final MapController _mapController = MapController();
@@ -35,7 +34,7 @@ class _MapPageState extends State<MapPage> {
   static const int historyLength = 5;
   static const double minDistance = 1.0;
   String? _currentAlertLocation;
-  String? _routeId ;
+  String? _routeId;
 
   List<LatLng> routeCoordinates = [];
   List<Map<String, dynamic>> routeLocations = [];
@@ -44,7 +43,7 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
-    _routeId = widget.routeId; // Obtener el routeId del widget
+    _routeId = widget.routeId;
     _determinePosition();
     if (_routeId != null) {
       _loadToken();
@@ -130,6 +129,7 @@ class _MapPageState extends State<MapPage> {
                   location['image'],
             };
           }).toList();
+          _sortRouteLocationsByDistance();
           _calculateRoute();
         });
       }
@@ -137,6 +137,30 @@ class _MapPageState extends State<MapPage> {
       setState(() {
         //Exception
       });
+    }
+  }
+
+  void _sortRouteLocationsByDistance() {
+    if (currentLocation != null) {
+      routeLocations.sort((a, b) {
+        final aDistance = Geolocator.distanceBetween(
+          currentLocation!.latitude,
+          currentLocation!.longitude,
+          a['coordinates'].latitude,
+          a['coordinates'].longitude,
+        );
+        final bDistance = Geolocator.distanceBetween(
+          currentLocation!.latitude,
+          currentLocation!.longitude,
+          b['coordinates'].latitude,
+          b['coordinates'].longitude,
+        );
+        return aDistance.compareTo(bDistance);
+      });
+
+      routeCoordinates = routeLocations.map((location) {
+        return location['coordinates'] as LatLng;
+      }).toList();
     }
   }
 
@@ -377,4 +401,3 @@ class _MapPageState extends State<MapPage> {
     );
   }
 }
-
