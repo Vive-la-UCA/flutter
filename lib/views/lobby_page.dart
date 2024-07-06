@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/widgets/route_card.dart';
-import 'package:vive_la_uca/widgets/search_bar.dart';
 import 'package:vive_la_uca/widgets/simple_text.dart';
 import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/services/route_service.dart';
@@ -70,8 +69,6 @@ class _LobbyPageState extends State<LobbyPage> {
                   fontWeight: FontWeight.w500,
                   textAlign: TextAlign.justify),
               const SizedBox(height: 15),
-              const SearchingBar(),
-              const SizedBox(height: 15),
               const SimpleText(
                   text: 'Rutas populares',
                   color: Colors.orange,
@@ -94,7 +91,7 @@ class _LobbyPageState extends State<LobbyPage> {
                           return Container(
                             height:
                                 270, // Ajusta la altura según el contenido de la tarjeta
-                            child: ListView.builder(
+                            child: ListView.separated(
                               scrollDirection: Axis.horizontal,
                               itemCount: snapshot.data!.length,
                               itemBuilder: (context, index) {
@@ -106,9 +103,14 @@ class _LobbyPageState extends State<LobbyPage> {
                                               'image'], // Asegura que la URL es correcta
                                   title: route['name'],
                                   description: route['description'],
-                                  distance: '5 km',
+                                  distance: '',
+                                  redirect: '/route/${route['uid']}',
+                                  uid: route['uid'],
                                 );
                               },
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(
+                                      width: 10), // Adjust gap between cards
                             ),
                           );
                         } else {
@@ -116,7 +118,7 @@ class _LobbyPageState extends State<LobbyPage> {
                         }
                       },
                     ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
               const SimpleText(
                   text: 'Lugares populares',
                   color: Colors.orange,
@@ -139,7 +141,7 @@ class _LobbyPageState extends State<LobbyPage> {
                           return Container(
                             height:
                                 270, // Ajusta la altura según el contenido de la tarjeta
-                            child: ListView.builder(
+                            child: ListView.separated(
                               scrollDirection: Axis.horizontal,
                               itemCount: snapshot.data!.length,
                               itemBuilder: (context, index) {
@@ -151,9 +153,14 @@ class _LobbyPageState extends State<LobbyPage> {
                                               'image'], // Asegura que la URL es correcta
                                   title: location['name'],
                                   description: location['description'],
-                                  distance: '5 km',
+                                  distance: '',
+                                  redirect: '/home',
+                                  uid: location['uid'],
                                 );
                               },
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(
+                                      width: 10), // Adjust gap between cards
                             ),
                           );
                         } else {

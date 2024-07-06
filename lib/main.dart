@@ -6,6 +6,7 @@ import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/views/home_page.dart';
 import 'package:vive_la_uca/views/login_page.dart';
 import 'package:vive_la_uca/views/register_page.dart';
+import 'package:vive_la_uca/views/route_info.dart';
 import 'package:vive_la_uca/views/splash_screen.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
@@ -42,9 +43,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Flutter Demo',
+      title: 'Vive la UCA',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        scaffoldBackgroundColor: Colors.white,
         primaryColor: const Color(0xFF012255),
       ),
       routerConfig: _router,
@@ -53,16 +55,25 @@ class MyApp extends StatelessWidget {
 }
 
 final GoRouter _router = GoRouter(
-    redirect: (context, state) {
-      if (isLoggedIn) {
-        return "/home";
-      }
-      return null;
-    },
-    routes: [
-      GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
-      GoRoute(path: '/home', builder: (context, state) => const HomePage()),
-      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
-      GoRoute(
-          path: '/register', builder: (context, state) => const RegisterPage()),
-    ]);
+  redirect: (context, state) {
+    if (isLoggedIn) {
+      return "/home";
+    }
+    return null;
+  },
+  routes: [
+    GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
+    GoRoute(path: '/home', builder: (context, state) => const HomePage()),
+    GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+    GoRoute(
+      path: '/route/:uid',
+      builder: (context, state) {
+        final String uid = state
+            .params['uid']!; // Recuperar el UID de los parámetros de la ruta
+        return RouteInfo(uid: uid); // Pasar el UID al constructor de RouteInfo
+      },
+    ),
+    GoRoute(
+        path: '/register', builder: (context, state) => const RegisterPage()),
+  ],
+);
