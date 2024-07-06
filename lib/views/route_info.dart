@@ -35,26 +35,37 @@ class RouteInfo extends StatelessWidget {
                     ),
                   ),
                   padding: const EdgeInsets.all(16.0),
-                  child: const Column(
+                  child:  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Ruta Romero',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 24,
                           color: Colors.white, // Texto blanco para contraste
+                          fontFamily: 'MontserratBold',
                         ),
                       ),
-                      SizedBox(height: 8),
-                      Row(
+                      const SizedBox(height: 8),
+                      ElevatedButton(onPressed: startRoute, 
+                      //color de fondo
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        padding: EdgeInsets.symmetric(horizontal: 16.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.play_arrow, color: Colors.orange),
+                          Icon(Icons.play_arrow, color: Colors.white),
                           Text(' Empezar ', style: TextStyle(color: Colors.white)),
                           
-                         
                         ],
-                      ),
+                      ),),
+                      
                     ],
                   ),
                 ),
@@ -64,7 +75,7 @@ class RouteInfo extends StatelessWidget {
               padding: EdgeInsets.all(16.0),
               child: Text(
                 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.',
-                style: TextStyle(fontSize: 16),
+                style: TextStyle(fontSize: 16,),
                 textAlign: TextAlign.justify,
               ),
             ),
@@ -81,16 +92,27 @@ class RouteInfo extends StatelessWidget {
             ),
             ),
            
-            SizedBox(height: 10),
+            const SizedBox(height: 5),
             // Lista de lugares
             Container(
-              height: 300,
+              height: 400,
               child: ListView(
                 scrollDirection: Axis.vertical,
                 children: [
                   _buildPlaceCard('Centro Monseñor Romero', 'https://via.placeholder.com/100'),
                   _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
-                  // Añade más tarjetas según sea necesario
+                  _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
+                  _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
+                  _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
+                  _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
+                  _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
+                  _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
+                  _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
+                  _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
+                  _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
+                  _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
+                  _buildPlaceCard('Mural Rostro de Mártires', 'https://via.placeholder.com/100'),
+                 
                 ],
               ),
             ),
@@ -129,5 +151,9 @@ class RouteInfo extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void startRoute() {
+    print('Iniciar ruta');
   }
 }

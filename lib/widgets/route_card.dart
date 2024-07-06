@@ -6,6 +6,7 @@ class RouteCard extends StatelessWidget {
   final String title;
   final String description;
   final String distance;
+  final String redirect;
 
   const RouteCard({
     super.key,
@@ -13,6 +14,7 @@ class RouteCard extends StatelessWidget {
     required this.title,
     required this.description,
     required this.distance,
+    this.redirect = "/",
   });
 
   @override
@@ -20,7 +22,7 @@ class RouteCard extends StatelessWidget {
     return InkWell(
       onTap: () {
         // Navegar a la ruta '/route'
-        GoRouter.of(context).push('/route');
+        GoRouter.of(context).push(redirect);
       },
       child: Container(
         color: Colors.white,
