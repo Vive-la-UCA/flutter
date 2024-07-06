@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class RouteInfo extends StatelessWidget {
-  const RouteInfo({Key? key}) : super(key: key);
+   final String uid;
+   RouteInfo({Key? key, required this.uid}) : super(key: key);
+   
 
   @override
   Widget build(BuildContext context) {
@@ -57,11 +59,12 @@ class RouteInfo extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                       ),
-                      child: const Row(
+                      child:  const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.play_arrow, color: Colors.white),
                           Text(' Empezar ', style: TextStyle(color: Colors.white)),
+                          
                           
                         ],
                       ),),
@@ -79,6 +82,7 @@ class RouteInfo extends StatelessWidget {
                 textAlign: TextAlign.justify,
               ),
             ),
+            Text(' UID de la ruta: $uid ', style: const TextStyle(color: Colors.black)),
             const Padding(
               padding: EdgeInsets.fromLTRB(16.0, 0, 16.0, 0),
               child:  Text(
@@ -125,24 +129,24 @@ class RouteInfo extends StatelessWidget {
   Widget _buildPlaceCard(String title, String imageUrl) {
     return Container(
       width: 250,
-      margin: EdgeInsets.all(8),
+      margin: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5, offset: Offset(0, 2))],
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5, offset: Offset(0, 2))],
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.horizontal(left: Radius.circular(8)),
+            borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
             child: Image.network(imageUrl, width: 100, height: 100, fit: BoxFit.cover),
           ),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.all(8),
+              padding: const EdgeInsets.all(8),
               child: Text(
                 title,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 2,
               ),

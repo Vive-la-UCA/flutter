@@ -7,6 +7,7 @@ class RouteCard extends StatelessWidget {
   final String description;
   final String distance;
   final String redirect;
+  final String uid;
 
   const RouteCard({
     super.key,
@@ -15,6 +16,7 @@ class RouteCard extends StatelessWidget {
     required this.description,
     required this.distance,
     this.redirect = "/",
+    required this.uid,
   });
 
   @override
