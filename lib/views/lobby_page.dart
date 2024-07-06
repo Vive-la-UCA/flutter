@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/widgets/route_card.dart';
-import 'package:vive_la_uca/widgets/search_bar.dart';
 import 'package:vive_la_uca/widgets/simple_text.dart';
 import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/services/route_service.dart';
@@ -105,7 +104,8 @@ class _LobbyPageState extends State<LobbyPage> {
                                   title: route['name'],
                                   description: route['description'],
                                   distance: '',
-                                  redirect: '/route',
+                                  redirect: '/route/${route['uid']}',
+                                  uid: route['uid'],
                                 );
                               },
                               separatorBuilder: (context, index) =>
@@ -155,6 +155,7 @@ class _LobbyPageState extends State<LobbyPage> {
                                   description: location['description'],
                                   distance: '',
                                   redirect: '/home',
+                                  uid: location['uid'],
                                 );
                               },
                               separatorBuilder: (context, index) =>

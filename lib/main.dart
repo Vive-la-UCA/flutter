@@ -62,7 +62,14 @@ final GoRouter _router = GoRouter(
     GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
     GoRoute(path: '/home', builder: (context, state) => const HomePage()),
     GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
-    GoRoute(path: '/route', builder: (context, state) => const RouteInfo()),
+    GoRoute(
+      path: '/route/:uid',
+      builder: (context, state) {
+        final String uid = state
+            .params['uid']!; // Recuperar el UID de los parámetros de la ruta
+        return RouteInfo(uid: uid); // Pasar el UID al constructor de RouteInfo
+      },
+    ),
     GoRoute(
         path: '/register', builder: (context, state) => const RegisterPage()),
   ],
