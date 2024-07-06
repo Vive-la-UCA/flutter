@@ -21,20 +21,23 @@ class RouteService {
     }
   }
 
-  Future<List<dynamic>> getOneRoute(tokenKey, uid) async {
-    final url = Uri.parse('$baseUrl/api/route/$uid');
-    final response = await http.get(
-      url,
-      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $tokenKey'},
-    );
+  Future<Map<String, dynamic>> getOneRoute(String tokenKey, String uid) async {
+  final url = Uri.parse('$baseUrl/api/route/$uid');
+  final response = await http.get(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $tokenKey'
+    },
+  );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      // devolver el objeto de la ruta
-      return data['route'];
-    } else {
-      throw Exception('Failed to load routes');
-    }
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return data['route'];
+  } else {
+    throw Exception('Failed to load route');
   }
+}
+
   
 }

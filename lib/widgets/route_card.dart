@@ -18,6 +18,7 @@ class RouteCard extends StatelessWidget {
     this.redirect = "/",
     required this.uid,
   });
+  
 
   @override
   Widget build(BuildContext context) {
