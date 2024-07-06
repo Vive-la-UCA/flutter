@@ -32,7 +32,8 @@ class RouteCard extends StatelessWidget {
         width: 330, // Anchura fija para la tarjeta en un ListView horizontal
         child: Card(
           color: Colors.white,
-          elevation: 5, // Ajusta este valor para controlar la profundidad de la sombra
+          elevation:
+              2, // Ajusta este valor para controlar la profundidad de la sombra
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -43,8 +44,10 @@ class RouteCard extends StatelessWidget {
               Image.network(
                 imagePath,
                 height: 150, // Altura fija para la imagen
-                width: double.infinity, // La imagen ocupa todo el ancho de la tarjeta
-                fit: BoxFit.cover, // La imagen se ajusta cubriendo completamente el espacio asignado
+                width: double
+                    .infinity, // La imagen ocupa todo el ancho de la tarjeta
+                fit: BoxFit
+                    .cover, // La imagen se ajusta cubriendo completamente el espacio asignado
               ),
               Padding(
                 padding: const EdgeInsets.all(10.0),
@@ -56,11 +59,15 @@ class RouteCard extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
+                          style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).primaryColor),
                         ),
                         Text(
                           distance,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
