@@ -29,10 +29,15 @@ class _MapPageState extends State<MapPage> {
   Position? _previousPosition;
   final List<LatLng> _locationHistory = [];
   static const int historyLength = 5; // Número de puntos para suavizar
-  static const double minDistance = 1.0; // Umbral mínimo de distancia en metr
+  static const double minDistance = 1.0; // Umbral mínimo de distancia en metros
+  String?
+      _currentAlertLocation; // Variable para rastrear la ubicación actual de alerta
 
   // Define una lista de coordenadas personalizadas para la ruta
-  List<LatLng> customCoordinates = [];
+  List<LatLng> routeCoordinates = [];
+
+  List<Map<String, dynamic>> routeLocations =
+      []; // Lista de ubicaciones de la ruta
 
   List<Map<String, dynamic>> locations = [];
 
@@ -88,23 +93,40 @@ class _MapPageState extends State<MapPage> {
       const routeId =
           '66822e32e6528f703bb47ffa'; // Reemplaza con el ID de la ruta que necesitas
       final routeResponse = await routeService.getOneRoute(token, routeId);
-      final routeLocations = routeResponse['locations'];
+      final locationsFromRoute = routeResponse['locations'];
 
-      // Extrae las coordenadas de las ubicaciones y las guarda en customCoordinates
+      // Extrae las coordenadas de las ubicaciones y las guarda en routeCoordinates
       setState(() {
-        customCoordinates = routeLocations.map<LatLng>((location) {
+        routeCoordinates = locationsFromRoute.map<LatLng>((location) {
           return LatLng(location['latitude'], location['longitude']);
+        }).toList();
+
+        // Guarda las ubicaciones de la ruta para proximidad
+        routeLocations =
+            locationsFromRoute.map<Map<String, dynamic>>((location) {
+          return {
+            '_id':
+                location['_id'], // Asegúrate de incluir el ID en cada ubicación
+            'name': location['name'],
+            'description': location['description'],
+            'coordinates': LatLng(location['latitude'], location['longitude']),
+            'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                location['image'], // Actualiza la URL base según sea necesario
+          };
         }).toList();
       });
 
-      // El resto del código para obtener las ubicaciones
+      // El resto del código para obtener todas las ubicaciones
       final locationResponse = await LocationService(
               baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
-          .getLocations(token);
+          .getAllLocations(token);
       if (locationResponse != null) {
+        print(
+            'Location Response: ${locationResponse.length} locations'); // Añadir esta línea
         setState(() {
           locations = locationResponse.map<Map<String, dynamic>>((location) {
             return {
+              '_id': location['_id'],
               'name': location['name'],
               'description': location['description'],
               'coordinates':
@@ -159,7 +181,7 @@ class _MapPageState extends State<MapPage> {
   void _checkProximity() {
     if (currentLocation == null) return;
 
-    for (var location in locations) {
+    for (var location in routeLocations) {
       double distance = Geolocator.distanceBetween(
         currentLocation!.latitude,
         currentLocation!.longitude,
@@ -167,25 +189,36 @@ class _MapPageState extends State<MapPage> {
         location['coordinates'].longitude,
       );
 
-      if (distance <= 5.0) {
-        _showProximityAlert(location['name']);
+      if (distance <= 10.0 && !visitedLocations.contains(location['_id'])) {
+        _showProximityAlert(
+            location['name']); // O cambiar a '_id' si prefieres usar el ID
+        visitedLocations.add(location['_id']);
+        break;
       }
     }
   }
 
   void _showProximityAlert(String locationName) {
+    setState(() {
+      _currentAlertLocation = locationName;
+    });
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return CustomDialog(locationName: locationName);
       },
-    );
+    ).then((_) {
+      setState(() {
+        _currentAlertLocation = null;
+      });
+    });
   }
 
   void _calculateRoute() async {
     if (currentLocation == null) return;
 
-    List<LatLng> waypoints = [currentLocation!, ...customCoordinates];
+    List<LatLng> waypoints = [currentLocation!, ...routeCoordinates];
 
     // Crear una lista de coordenadas para la URL
     String coordinates = waypoints
