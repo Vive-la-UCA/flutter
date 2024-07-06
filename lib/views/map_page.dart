@@ -31,6 +31,8 @@ class _MapPageState extends State<MapPage> {
   static const int historyLength = 5;
   static const double minDistance = 1.0;
   String? _currentAlertLocation;
+  final List<LatLng> _traveledRoutePoints = [];
+  List<LatLng> _remainingRoutePoints = [];
 
   List<LatLng> routeCoordinates = [];
   List<Map<String, dynamic>> routeLocations = [];
@@ -62,8 +64,26 @@ class _MapPageState extends State<MapPage> {
         setState(() {
           currentLocation = smoothedLocation;
           _previousPosition = position;
+          _updateRouteProgress(); // Asegúrate de que esto esté aquí
         });
         _checkProximity();
+      }
+    });
+  }
+
+  void _updateRouteProgress() {
+    if (currentLocation == null || _remainingRoutePoints.isEmpty) return;
+
+    setState(() {
+      while (_remainingRoutePoints.isNotEmpty &&
+          Geolocator.distanceBetween(
+                currentLocation!.latitude,
+                currentLocation!.longitude,
+                _remainingRoutePoints[0].latitude,
+                _remainingRoutePoints[0].longitude,
+              ) <
+              minDistance) {
+        _traveledRoutePoints.add(_remainingRoutePoints.removeAt(0));
       }
     });
   }
@@ -177,7 +197,7 @@ class _MapPageState extends State<MapPage> {
         location['coordinates'].longitude,
       );
 
-      if (distance <= 10.0 && !visitedLocations.contains(location['_id'])) {
+      if (distance <= 20.0 && !visitedLocations.contains(location['name'])) {
         _showProximityAlert(location['name']);
         visitedLocations.add(location['_id']);
         break;
@@ -222,6 +242,7 @@ class _MapPageState extends State<MapPage> {
       setState(() {
         _routePoints =
             coordinates.map((point) => LatLng(point[1], point[0])).toList();
+        _remainingRoutePoints = List.from(_routePoints);
       });
     } else {
       //Exception
@@ -257,7 +278,7 @@ class _MapPageState extends State<MapPage> {
                 PolylineLayer(
                   polylines: [
                     Polyline(
-                      points: _routePoints,
+                      points: _remainingRoutePoints,
                       strokeWidth: 6.0,
                       color: Colors.blue.shade100,
                       borderColor: Colors.blue.shade300,
@@ -269,12 +290,9 @@ class _MapPageState extends State<MapPage> {
                 PolylineLayer(
                   polylines: [
                     Polyline(
-                      points: _routePoints,
-                      strokeWidth: 10.0,
-                      color: const Color.fromARGB(255, 61, 122, 228),
-                      borderColor: const Color.fromARGB(255, 51, 101, 187),
-                      borderStrokeWidth: 2,
-                      isDotted: true,
+                      points: _traveledRoutePoints,
+                      strokeWidth: 6.0,
+                      color: Colors.grey.shade600,
                     ),
                   ],
                 ),
@@ -283,17 +301,16 @@ class _MapPageState extends State<MapPage> {
                       locations, _showLocationDetails),
                 ),
                 CurrentLocationLayer(
-                  style: const LocationMarkerStyle(
-                    marker: DefaultLocationMarker(
+                  style: LocationMarkerStyle(
+                    marker: const DefaultLocationMarker(
                       color: Colors.black,
                       child: Image(
                           image: AssetImage('lib/assets/images/owlIcon.png')),
                     ),
-                    headingSectorColor: Colors.black,
-                    headingSectorRadius: 50,
-                    markerSize: Size(40, 40),
+                    accuracyCircleColor: Colors.blue.withOpacity(0.1),
+                    headingSectorColor: Colors.blue.withOpacity(0.5),
+                    markerSize: const Size(40, 40),
                     markerDirection: MarkerDirection.heading,
-                    accuracyCircleColor: Colors.transparent,
                   ),
                 ),
               ],
