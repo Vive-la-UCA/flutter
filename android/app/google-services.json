@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "711933802143",
-    "project_id": "vivelauca",
-    "storage_bucket": "vivelauca.appspot.com"
+    "project_number": "792313595999",
+    "project_id": "vive-la-uca-2024",
+    "storage_bucket": "vive-la-uca-2024.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:711933802143:android:c217a474d1e342769154aa",
+        "mobilesdk_app_id": "1:792313595999:android:147b0b9bd41d7fab2433ea",
         "android_client_info": {
-          "package_name": "com.example.vive_la_uca"
+          "package_name": "com.dei.vive_la_uca"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBiUbMlyLk4t76p0aY2HlpfUbYAWKPJH0c"
+          "current_key": "AIzaSyBzTD0BTLMA9Q1Syp-IifLouuda4pdORFk"
         }
       ],
       "services": {
