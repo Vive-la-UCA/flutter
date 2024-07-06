@@ -53,7 +53,7 @@ class MyApp extends StatelessWidget {
 
 final GoRouter _router = GoRouter(
   redirect: (context, state) {
-    if (isLoggedIn) {
+    if (isLoggedIn && (state.location == "/" || state.location == "/login")) {
       return "/home";
     }
     return null;
