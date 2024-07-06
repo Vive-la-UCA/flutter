@@ -40,9 +40,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Flutter Demo',
+      title: 'Vive la UCA',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        scaffoldBackgroundColor: Colors.white,
         primaryColor: const Color(0xFF012255),
       ),
       routerConfig: _router,
@@ -52,17 +53,9 @@ class MyApp extends StatelessWidget {
 
 final GoRouter _router = GoRouter(
   redirect: (context, state) {
-    final loggedIn = isLoggedIn;  // Check if the user is logged in
-    final goingToLogin = state.subloc == '/login';
-
-    if (loggedIn && goingToLogin) {
-      // If logged in and trying to go to login, redirect to home
+    if (isLoggedIn) {
       return "/home";
-    } else if (!loggedIn && state.subloc != '/login' && state.subloc != '/') {
-      // If not logged in and trying to access a protected route, redirect to login
-      return "/login";
     }
-    // No redirection needed
     return null;
   },
   routes: [
@@ -70,6 +63,7 @@ final GoRouter _router = GoRouter(
     GoRoute(path: '/home', builder: (context, state) => const HomePage()),
     GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
     GoRoute(path: '/route', builder: (context, state) => const RouteInfo()),
-    GoRoute(path: '/register', builder: (context, state) => const RegisterPage()),
+    GoRoute(
+        path: '/register', builder: (context, state) => const RegisterPage()),
   ],
 );
