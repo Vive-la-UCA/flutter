@@ -133,6 +133,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       itemBuilder: (context, index) {
                         final badge = _badges[index];
                         return Card(
+                          color: Colors.white,
                           child: ListTile(
                             leading: Image.network(
                               'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
