@@ -5,12 +5,16 @@ class RouteInfoWidget extends StatelessWidget {
   final List<String> locations;
   final String imageUrl;
   final VoidCallback onCancel;
+  final double? distance; // Añadir esta línea
+  final double? time; // Añadir esta línea
 
   RouteInfoWidget({
     required this.routeName,
     required this.locations,
     required this.imageUrl,
     required this.onCancel,
+    this.distance, // Añadir esta línea
+    this.time, // Añadir esta línea
   });
 
   @override
@@ -36,7 +40,6 @@ class RouteInfoWidget extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // Purple part with distance, time and start button
             Container(
               padding: const EdgeInsets.all(16.0),
               decoration: const BoxDecoration(
@@ -49,17 +52,19 @@ class RouteInfoWidget extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '2 km',
-                        style: TextStyle(
+                        distance != null
+                            ? '${distance!.toStringAsFixed(2)} km'
+                            : 'N/A',
+                        style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Colors.white),
                       ),
-                      Text(
+                      const Text(
                         'Distancia',
                         style: TextStyle(
                             fontSize: 14,
@@ -68,17 +73,19 @@ class RouteInfoWidget extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '50 min',
-                        style: TextStyle(
+                        time != null
+                            ? '${time!.toStringAsFixed(0)} min'
+                            : 'N/A',
+                        style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Colors.white),
                       ),
-                      Text(
+                      const Text(
                         'Tiempo',
                         style: TextStyle(
                             fontSize: 14,
