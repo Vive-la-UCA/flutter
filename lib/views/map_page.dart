@@ -8,21 +8,21 @@ import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vive_la_uca/services/location_service.dart';
-import 'package:vive_la_uca/widgets/dialog_route.dart';
+import 'package:vive_la_uca/widgets/dialog_location.dart';
 import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/services/route_service.dart';
 import 'package:vive_la_uca/widgets/location_details_bottomsheet.dart';
 import 'package:vive_la_uca/widgets/location_marker.dart';
 import 'package:vive_la_uca/widgets/bottom_info_route.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 
 class MapPage extends StatefulWidget {
   final String? routeId;
   final String? routeName;
+  final String? imageUrl;
 
-  const MapPage({Key? key, this.routeId, this.routeName}) : super(key: key);
+  const MapPage({Key? key, this.routeId, this.routeName, this.imageUrl}) : super(key: key);
 
   @override
   _MapPageState createState() => _MapPageState();
@@ -39,7 +39,6 @@ class _MapPageState extends State<MapPage> {
   final List<LatLng> _locationHistory = [];
   static const int historyLength = 5;
   static const double minDistance = 1.0;
-  String? _currentAlertLocation;
   String? _routeId;
 
   List<LatLng> routeCoordinates = [];
@@ -47,42 +46,42 @@ class _MapPageState extends State<MapPage> {
   List<Map<String, dynamic>> locations = [];
 
   @override
-void initState() {
-  super.initState();
-  _routeId = widget.routeId;
-  _checkPermissions();
-  _loadToken();
-  _loadVisitedLocations();
+  void initState() {
+    super.initState();
+    _routeId = widget.routeId;
+    _checkPermissions();
+    _loadToken();
+    _loadVisitedLocations();
 
-  positionStream = Geolocator.getPositionStream(
-    locationSettings: const LocationSettings(
-      accuracy: LocationAccuracy.bestForNavigation,
-      distanceFilter: 0,
-    ),
-  ).listen((Position position) {
-    if (_previousPosition == null ||
-        Geolocator.distanceBetween(
-              _previousPosition!.latitude,
-              _previousPosition!.longitude,
-              position.latitude,
-              position.longitude,
-            ) >
-            minDistance) {
-      LatLng smoothedLocation = _getSmoothedLocation(
-        LatLng(position.latitude, position.longitude),
-      );
-      if (mounted) {
-        // Verifica si el widget sigue montado
-        setState(() {
-          currentLocation = smoothedLocation;
-          _previousPosition = position;
-        });
-        _checkProximity();
-        _saveVisitedLocations();
+    positionStream = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 0,
+      ),
+    ).listen((Position position) {
+      if (_previousPosition == null ||
+          Geolocator.distanceBetween(
+                _previousPosition!.latitude,
+                _previousPosition!.longitude,
+                position.latitude,
+                position.longitude,
+              ) >
+              minDistance) {
+        LatLng smoothedLocation = _getSmoothedLocation(
+          LatLng(position.latitude, position.longitude),
+        );
+        if (mounted) {
+          // Verifica si el widget sigue montado
+          setState(() {
+            currentLocation = smoothedLocation;
+            _previousPosition = position;
+          });
+          _checkProximity();
+          _saveVisitedLocations();
+        }
       }
-    }
-  });
-}
+    });
+  }
 
   @override
   void dispose() {
@@ -181,19 +180,19 @@ void initState() {
   }
 
   Future<void> _saveVisitedLocations() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  prefs.setStringList('visitedLocations', visitedLocations.toList());
-}
-
-Future<void> _loadVisitedLocations() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  List<String>? savedLocations = prefs.getStringList('visitedLocations');
-  if (savedLocations != null) {
-    setState(() {
-      visitedLocations = savedLocations.toSet();
-    });
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setStringList('visitedLocations', visitedLocations.toList());
   }
-}
+
+  Future<void> _loadVisitedLocations() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? savedLocations = prefs.getStringList('visitedLocations');
+    if (savedLocations != null) {
+      setState(() {
+        visitedLocations = savedLocations.toSet();
+      });
+    }
+  }
 
   void _sortRouteLocationsByDistance() {
     if (currentLocation != null) {
@@ -255,43 +254,34 @@ Future<void> _loadVisitedLocations() async {
   }
 
   void _checkProximity() {
-  if (currentLocation == null) return;
+    if (currentLocation == null) return;
 
-  for (var location in locations) {
-    double distance = Geolocator.distanceBetween(
-      currentLocation!.latitude,
-      currentLocation!.longitude,
-      location['coordinates'].latitude,
-      location['coordinates'].longitude,
-    );
+    for (var location in locations) {
+      double distance = Geolocator.distanceBetween(
+        currentLocation!.latitude,
+        currentLocation!.longitude,
+        location['coordinates'].latitude,
+        location['coordinates'].longitude,
+      );
 
-    if (distance <= 20.0 && !visitedLocations.contains(location['name'])) {
-      _showProximityAlert(location['name']);
-      setState(() {
-        visitedLocations.add(location['name']);
-      });
-      _saveVisitedLocations();
-      break;
+      if (distance <= 20.0 && !visitedLocations.contains(location['name'])) {
+        _showProximityAlert(location);
+        setState(() {
+          visitedLocations.add(location['name']);
+        });
+        _saveVisitedLocations();
+        break;
+      }
     }
   }
-}
 
-
-  void _showProximityAlert(String locationName) {
-    setState(() {
-      _currentAlertLocation = locationName;
-    });
-
+  void _showProximityAlert(Map<String, dynamic> location) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return CustomDialog(locationName: locationName);
+        return CustomDialogLocation(location: location);
       },
-    ).then((_) {
-      setState(() {
-        _currentAlertLocation = null;
-      });
-    });
+    );
   }
 
   void _calculateRoute() async {
