@@ -12,6 +12,7 @@ import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/services/route_service.dart';
 import 'package:vive_la_uca/widgets/location_details_bottomsheet.dart';
 import 'package:vive_la_uca/widgets/location_marker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class MapPage extends StatefulWidget {
   final String? routeId;
@@ -41,40 +42,58 @@ class _MapPageState extends State<MapPage> {
   List<Map<String, dynamic>> locations = [];
 
   @override
-  void initState() {
-    super.initState();
-    _routeId = widget.routeId;
-    _determinePosition();
-    if (_routeId != null) {
-      _loadToken();
-    }
-
-    Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.bestForNavigation,
-        distanceFilter: 0,
-      ),
-    ).listen((Position position) {
-      if (_previousPosition == null ||
-          Geolocator.distanceBetween(
-                _previousPosition!.latitude,
-                _previousPosition!.longitude,
-                position.latitude,
-                position.longitude,
-              ) >
-              minDistance) {
-        LatLng smoothedLocation = _getSmoothedLocation(
-          LatLng(position.latitude, position.longitude),
-        );
-        setState(() {
-          currentLocation = smoothedLocation;
-          _previousPosition = position;
-        });
-        _checkProximity();
+void initState() {
+  super.initState();
+  _requestLocationPermission().then((granted) {
+    if (granted) {
+      _routeId = widget.routeId;
+      
+      _determinePosition();
+      if (_routeId != null) {
+        _loadToken();
       }
-    });
-  }
 
+      Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.bestForNavigation,
+          distanceFilter: 0,
+        ),
+      ).listen((Position position) {
+        if (_previousPosition == null ||
+            Geolocator.distanceBetween(
+                  _previousPosition!.latitude,
+                  _previousPosition!.longitude,
+                  position.latitude,
+                  position.longitude,
+                ) >
+                minDistance) {
+          LatLng smoothedLocation = _getSmoothedLocation(
+            LatLng(position.latitude, position.longitude),
+          );
+          setState(() {
+            currentLocation = smoothedLocation;
+            _previousPosition = position;
+          });
+          _checkProximity();
+        }
+      });
+    } else {
+      // Manejar el caso en el que el usuario no concede los permisos
+      print('Permisos de ubicación no concedidos');
+    }
+  });
+}
+
+Future<bool> _requestLocationPermission() async {
+  var status = await Permission.locationWhenInUse.status;
+  if (status.isGranted) {
+    return true;
+  } else if (status.isDenied || status.isRestricted || status.isPermanentlyDenied) {
+    status = await Permission.locationWhenInUse.request();
+    return status.isGranted;
+  }
+  return false;
+}
   void _showLocationDetails(Map<String, dynamic> location) {
     showModalBottomSheet(
       context: context,
