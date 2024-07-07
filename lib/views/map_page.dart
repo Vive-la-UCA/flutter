@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
@@ -13,11 +14,13 @@ import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/services/route_service.dart';
 import 'package:vive_la_uca/widgets/location_details_bottomsheet.dart';
 import 'package:vive_la_uca/widgets/location_marker.dart';
+import 'package:vive_la_uca/widgets/bottom_info_route.dart';
 
 class MapPage extends StatefulWidget {
   final String? routeId;
+  final String? routeName;
 
-  const MapPage({Key? key, this.routeId}) : super(key: key);
+  const MapPage({Key? key, this.routeId, this.routeName}) : super(key: key);
 
   @override
   _MapPageState createState() => _MapPageState();
@@ -28,7 +31,7 @@ class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   List<LatLng> _routePoints = [];
   bool _showRoute = false;
-
+  StreamSubscription<Position>? positionStream;
   Set<String> visitedLocations = {};
   Position? _previousPosition;
   final List<LatLng> _locationHistory = [];
@@ -48,7 +51,7 @@ class _MapPageState extends State<MapPage> {
     _checkPermissions();
     _loadToken();
 
-    Geolocator.getPositionStream(
+    positionStream = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.bestForNavigation,
         distanceFilter: 0,
@@ -65,13 +68,22 @@ class _MapPageState extends State<MapPage> {
         LatLng smoothedLocation = _getSmoothedLocation(
           LatLng(position.latitude, position.longitude),
         );
-        setState(() {
-          currentLocation = smoothedLocation;
-          _previousPosition = position;
-        });
-        _checkProximity();
+        if (mounted) {
+          // Verifica si el widget sigue montado
+          setState(() {
+            currentLocation = smoothedLocation;
+            _previousPosition = position;
+          });
+          _checkProximity();
+        }
       }
     });
+  }
+
+  @override
+  void dispose() {
+    positionStream?.cancel(); // Cancela la suscripción al stream
+    super.dispose();
   }
 
   Future<void> _checkPermissions() async {
@@ -106,6 +118,7 @@ class _MapPageState extends State<MapPage> {
         final locationsFromRoute = routeResponse['locations'];
 
         if (mounted) {
+          // Verifica si el widget sigue montado
           setState(() {
             routeCoordinates = locationsFromRoute.map<LatLng>((location) {
               return LatLng(location['latitude'], location['longitude']);
@@ -133,6 +146,7 @@ class _MapPageState extends State<MapPage> {
       if (locationResponse != null) {
         print('Location Response: ${locationResponse.length} locations');
         if (mounted) {
+          // Verifica si el widget sigue montado
           setState(() {
             locations = locationResponse.map<Map<String, dynamic>>((location) {
               return {
@@ -154,6 +168,7 @@ class _MapPageState extends State<MapPage> {
       }
     } else {
       if (mounted) {
+        // Verifica si el widget sigue montado
         setState(() {
           // Manejo de error
         });
@@ -338,92 +353,98 @@ class _MapPageState extends State<MapPage> {
       ),
       body: currentLocation == null
           ? const Center(child: CircularProgressIndicator())
-          : FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                initialCenter: currentLocation!,
-                initialZoom: 18.0,
-              ),
+          : Stack(
               children: [
-                TileLayer(
-                  urlTemplate: 'http://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.example.vive_la_uca',
-                  tileProvider: const FMTCStore('mapStore').getTileProvider(),
-                ),
-                if (_showRoute)
-                  PolylineLayer(
-                    polylines: [
-                      Polyline(
-                        points: _routePoints,
-                        strokeWidth: 6.0,
-                        color: Colors.blue.shade100,
-                        borderColor: Colors.blue.shade300,
-                        borderStrokeWidth: 5,
-                        isDotted: false,
-                      ),
-                    ],
+                FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: currentLocation!,
+                    initialZoom: 18.0,
                   ),
-                if (_showRoute)
-                  PolylineLayer(
-                    polylines: [
-                      Polyline(
-                        points: _routePoints,
-                        strokeWidth: 10.0,
-                        color: const Color.fromARGB(255, 61, 122, 228),
-                        borderColor: const Color.fromARGB(255, 51, 101, 187),
-                        borderStrokeWidth: 2,
-                        isDotted: true,
-                      ),
-                    ],
-                  ),
-                MarkerLayer(
-                  markers: LocationMarkers.buildMarkers(
-                      locations, _showLocationDetails),
-                ),
-                CurrentLocationLayer(
-                  style: const LocationMarkerStyle(
-                    marker: DefaultLocationMarker(
-                      color: Colors.black,
-                      child: Image(
-                          image: AssetImage('lib/assets/images/owlIcon.png')),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'http://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.example.vive_la_uca',
+                      tileProvider:
+                          const FMTCStore('mapStore').getTileProvider(),
                     ),
-                    headingSectorColor: Colors.black,
-                    headingSectorRadius: 50,
-                    markerSize: Size(40, 40),
-                    markerDirection: MarkerDirection.heading,
-                    accuracyCircleColor: Colors.transparent,
-                  ),
+                    if (_showRoute)
+                      PolylineLayer(
+                        polylines: [
+                          Polyline(
+                            points: _routePoints,
+                            strokeWidth: 6.0,
+                            color: Colors.blue.shade100,
+                            borderColor: Colors.blue.shade300,
+                            borderStrokeWidth: 5,
+                            isDotted: false,
+                          ),
+                        ],
+                      ),
+                    if (_showRoute)
+                      PolylineLayer(
+                        polylines: [
+                          Polyline(
+                            points: _routePoints,
+                            strokeWidth: 10.0,
+                            color: const Color.fromARGB(255, 61, 122, 228),
+                            borderColor:
+                                const Color.fromARGB(255, 51, 101, 187),
+                            borderStrokeWidth: 2,
+                            isDotted: true,
+                          ),
+                        ],
+                      ),
+                    MarkerLayer(
+                      markers: LocationMarkers.buildMarkers(
+                          locations, _showLocationDetails),
+                    ),
+                    CurrentLocationLayer(
+                      style: const LocationMarkerStyle(
+                        marker: DefaultLocationMarker(
+                          color: Colors.black,
+                          child: Image(
+                              image:
+                                  AssetImage('lib/assets/images/owlIcon.png')),
+                        ),
+                        headingSectorColor: Colors.black,
+                        headingSectorRadius: 50,
+                        markerSize: Size(40, 40),
+                        markerDirection: MarkerDirection.heading,
+                        accuracyCircleColor: Colors.transparent,
+                      ),
+                    ),
+                  ],
                 ),
+                if (_showRoute)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: RouteInfoWidget(
+                      routeName: widget.routeName ?? 'Ruta desconocida',
+                      locations: routeLocations
+                          .map((loc) => loc['name'] as String)
+                          .toList(),
+                      imageUrl: routeLocations.isNotEmpty
+                          ? routeLocations[0]['imageUrl'] as String
+                          : 'https://via.placeholder.com/150',
+                      onCancel: _toggleRouteVisibility,
+                    ),
+                  ),
               ],
             ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          if (_showRoute) // Mostrar solo si hay una ruta activa
-            FloatingActionButton(
-              onPressed: _toggleRouteVisibility,
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
-              elevation: 6.0,
-              shape: const CircleBorder(),
-              child: const Icon(
-                Icons.cancel,
-                size: 24.0,
-              ),
-            ),
-          const SizedBox(height: 10),
-          FloatingActionButton(
-            onPressed: _moveToCurrentLocation,
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
-            elevation: 6.0,
-            shape: const CircleBorder(),
-            child: const Icon(
-              Icons.my_location,
-              size: 24.0,
-            ),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton(
+        onPressed: _moveToCurrentLocation,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 6.0,
+        shape: const CircleBorder(),
+        child: const Icon(
+          Icons.my_location,
+          size: 24.0,
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );

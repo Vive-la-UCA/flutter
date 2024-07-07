@@ -161,7 +161,10 @@ class _RouteInfoState extends State<RouteInfo> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => MapPage(routeId: widget.uid),
+          builder: (context) => MapPage(
+            routeId: widget.uid,
+            routeName: _routeData?['name'] ?? 'Ruta desconocida',
+          ),
         ),
       );
     } else {
