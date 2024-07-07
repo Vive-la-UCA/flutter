@@ -6,19 +6,18 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:vive_la_uca/services/location_service.dart';
 import 'package:vive_la_uca/widgets/dialog_route.dart';
 import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/services/route_service.dart';
 import 'package:vive_la_uca/widgets/location_details_bottomsheet.dart';
 import 'package:vive_la_uca/widgets/location_marker.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class MapPage extends StatefulWidget {
   final String? routeId;
 
-  const MapPage({Key? key, this.routeId = '6689428fa454b9cd7b34d287'})
-      : super(key: key);
+  const MapPage({Key? key, this.routeId = '6689428fa454b9cd7b34d287'}) : super(key: key);
 
   @override
   _MapPageState createState() => _MapPageState();
@@ -36,8 +35,6 @@ class _MapPageState extends State<MapPage> {
   static const int historyLength = 5;
   static const double minDistance = 1.0;
   String? _currentAlertLocation;
-  final List<LatLng> _traveledRoutePoints = [];
-  List<LatLng> _remainingRoutePoints = [];
   String? _routeId;
 
   List<LatLng> routeCoordinates = [];
@@ -47,57 +44,47 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
-    _requestLocationPermission().then((granted) {
-      if (granted) {
-        _routeId = widget.routeId;
+    _routeId = widget.routeId;
+    _checkPermissions();
+    if (_routeId != null) {
+      _loadToken();
+    }
 
-        _determinePosition();
-        if (_routeId != null) {
-          _loadToken();
-        }
-
-        Geolocator.getPositionStream(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.bestForNavigation,
-            distanceFilter: 0,
-          ),
-        ).listen((Position position) {
-          if (_previousPosition == null ||
-              Geolocator.distanceBetween(
-                    _previousPosition!.latitude,
-                    _previousPosition!.longitude,
-                    position.latitude,
-                    position.longitude,
-                  ) >
-                  minDistance) {
-            LatLng smoothedLocation = _getSmoothedLocation(
-              LatLng(position.latitude, position.longitude),
-            );
-            setState(() {
-              currentLocation = smoothedLocation;
-              _previousPosition = position;
-            });
-            _checkProximity();
-          }
+    Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 0,
+      ),
+    ).listen((Position position) {
+      if (_previousPosition == null ||
+          Geolocator.distanceBetween(
+                _previousPosition!.latitude,
+                _previousPosition!.longitude,
+                position.latitude,
+                position.longitude,
+              ) >
+              minDistance) {
+        LatLng smoothedLocation = _getSmoothedLocation(
+          LatLng(position.latitude, position.longitude),
+        );
+        setState(() {
+          currentLocation = smoothedLocation;
+          _previousPosition = position;
         });
-      } else {
-        // Manejar el caso en el que el usuario no concede los permisos
-        print('Permisos de ubicación no concedidos');
+        _checkProximity();
       }
     });
   }
 
-  Future<bool> _requestLocationPermission() async {
-    var status = await Permission.locationWhenInUse.status;
+  Future<void> _checkPermissions() async {
+    final status = await Permission.location.request();
+
     if (status.isGranted) {
-      return true;
-    } else if (status.isDenied ||
-        status.isRestricted ||
-        status.isPermanentlyDenied) {
-      status = await Permission.locationWhenInUse.request();
-      return status.isGranted;
+      _determinePosition();
+    } else if (status.isDenied || status.isPermanentlyDenied) {
+      // Handle permission denied
+      openAppSettings();
     }
-    return false;
   }
 
   void _showLocationDetails(Map<String, dynamic> location) {
@@ -280,7 +267,6 @@ class _MapPageState extends State<MapPage> {
       setState(() {
         _routePoints =
             coordinates.map((point) => LatLng(point[1], point[0])).toList();
-        _remainingRoutePoints = List.from(_routePoints);
         _showRoute = true; // Mostrar la ruta después de calcularla
       });
     } else {
@@ -317,8 +303,7 @@ class _MapPageState extends State<MapPage> {
                   _routePoints.clear();
                   routeCoordinates.clear();
                   routeLocations.clear();
-                  _routeId =
-                      null; // Limpiar el routeId para evitar futuras peticiones
+                  _routeId = null; // Limpiar el routeId para evitar futuras peticiones
                 });
                 Navigator.of(context).pop();
               },
@@ -348,27 +333,6 @@ class _MapPageState extends State<MapPage> {
                   urlTemplate: 'http://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.example.vive_la_uca',
                   tileProvider: const FMTCStore('mapStore').getTileProvider(),
-                ),
-                PolylineLayer(
-                  polylines: [
-                    Polyline(
-                      points: _remainingRoutePoints,
-                      strokeWidth: 6.0,
-                      color: Colors.blue.shade100,
-                      borderColor: Colors.blue.shade300,
-                      borderStrokeWidth: 5,
-                      isDotted: false,
-                    ),
-                  ],
-                ),
-                PolylineLayer(
-                  polylines: [
-                    Polyline(
-                      points: _traveledRoutePoints,
-                      strokeWidth: 6.0,
-                      color: Colors.grey.shade600,
-                    ),
-                  ],
                 ),
                 if (_showRoute)
                   PolylineLayer(
@@ -401,16 +365,17 @@ class _MapPageState extends State<MapPage> {
                       locations, _showLocationDetails),
                 ),
                 CurrentLocationLayer(
-                  style: LocationMarkerStyle(
-                    marker: const DefaultLocationMarker(
+                  style: const LocationMarkerStyle(
+                    marker: DefaultLocationMarker(
                       color: Colors.black,
                       child: Image(
                           image: AssetImage('lib/assets/images/owlIcon.png')),
                     ),
-                    accuracyCircleColor: Colors.blue.withOpacity(0.1),
-                    headingSectorColor: Colors.blue.withOpacity(0.5),
-                    markerSize: const Size(40, 40),
+                    headingSectorColor: Colors.black,
+                    headingSectorRadius: 50,
+                    markerSize: Size(40, 40),
                     markerDirection: MarkerDirection.heading,
+                    accuracyCircleColor: Colors.transparent,
                   ),
                 ),
               ],
