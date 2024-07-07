@@ -46,9 +46,7 @@ class _MapPageState extends State<MapPage> {
     super.initState();
     _routeId = widget.routeId;
     _checkPermissions();
-    if (_routeId != null) {
-      _loadToken();
-    }
+    _loadToken();
 
     Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
@@ -99,56 +97,67 @@ class _MapPageState extends State<MapPage> {
 
   void _loadToken() async {
     final token = await TokenStorage.getToken();
-    if (token != null && _routeId != null) {
+    if (token != null) {
       final routeService =
           RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
 
-      final routeResponse = await routeService.getOneRoute(token, _routeId!);
-      final locationsFromRoute = routeResponse['locations'];
+      if (_routeId != null) {
+        final routeResponse = await routeService.getOneRoute(token, _routeId!);
+        final locationsFromRoute = routeResponse['locations'];
 
-      setState(() {
-        routeCoordinates = locationsFromRoute.map<LatLng>((location) {
-          return LatLng(location['latitude'], location['longitude']);
-        }).toList();
+        if (mounted) {
+          setState(() {
+            routeCoordinates = locationsFromRoute.map<LatLng>((location) {
+              return LatLng(location['latitude'], location['longitude']);
+            }).toList();
 
-        routeLocations =
-            locationsFromRoute.map<Map<String, dynamic>>((location) {
-          return {
-            '_id': location['_id'],
-            'name': location['name'],
-            'description': location['description'],
-            'coordinates': LatLng(location['latitude'], location['longitude']),
-            'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                location['image'],
-          };
-        }).toList();
-      });
+            routeLocations =
+                locationsFromRoute.map<Map<String, dynamic>>((location) {
+              return {
+                '_id': location['_id'],
+                'name': location['name'],
+                'description': location['description'],
+                'coordinates':
+                    LatLng(location['latitude'], location['longitude']),
+                'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                    location['image'],
+              };
+            }).toList();
+          });
+        }
+      }
 
       final locationResponse = await LocationService(
               baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
           .getAllLocations(token);
       if (locationResponse != null) {
         print('Location Response: ${locationResponse.length} locations');
-        setState(() {
-          locations = locationResponse.map<Map<String, dynamic>>((location) {
-            return {
-              '_id': location['_id'],
-              'name': location['name'],
-              'description': location['description'],
-              'coordinates':
-                  LatLng(location['latitude'], location['longitude']),
-              'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                  location['image'],
-            };
-          }).toList();
-          _sortRouteLocationsByDistance();
-          _calculateRoute();
-        });
+        if (mounted) {
+          setState(() {
+            locations = locationResponse.map<Map<String, dynamic>>((location) {
+              return {
+                '_id': location['_id'],
+                'name': location['name'],
+                'description': location['description'],
+                'coordinates':
+                    LatLng(location['latitude'], location['longitude']),
+                'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                    location['image'],
+              };
+            }).toList();
+            _sortRouteLocationsByDistance();
+            if (_routeId != null) {
+              _calculateRoute();
+            }
+          });
+        }
       }
     } else {
-      setState(() {
-        //Exception
-      });
+      if (mounted) {
+        setState(() {
+          // Manejo de error
+        });
+      }
     }
   }
 
@@ -248,9 +257,13 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _calculateRoute() async {
-    if (currentLocation == null || _routeId == null) return;
+    if (currentLocation == null) return;
 
     List<LatLng> waypoints = [currentLocation!, ...routeCoordinates];
+
+    if (waypoints.length <= 1) {
+      return; // No hay suficiente información para calcular la ruta
+    }
 
     String coordinates = waypoints
         .map((point) => '${point.longitude},${point.latitude}')
@@ -264,11 +277,13 @@ class _MapPageState extends State<MapPage> {
     if (response.statusCode == 200) {
       var json = jsonDecode(response.body);
       var coordinates = json['routes'][0]['geometry']['coordinates'] as List;
-      setState(() {
-        _routePoints =
-            coordinates.map((point) => LatLng(point[1], point[0])).toList();
-        _showRoute = true; // Mostrar la ruta después de calcularla
-      });
+      if (mounted) {
+        setState(() {
+          _routePoints =
+              coordinates.map((point) => LatLng(point[1], point[0])).toList();
+          _showRoute = true; // Mostrar la ruta después de calcularla
+        });
+      }
     } else {
       //Exception
     }

@@ -157,11 +157,15 @@ class _RouteInfoState extends State<RouteInfo> {
   }
 
   void startRoute() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MapPage(routeId: widget.uid),
-      ),
-    );
+    if (_routeData != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MapPage(routeId: widget.uid),
+        ),
+      );
+    } else {
+      print('No route data available to start route');
+    }
   }
 }
