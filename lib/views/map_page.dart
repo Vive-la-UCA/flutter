@@ -40,6 +40,10 @@ class _MapPageState extends State<MapPage> {
   String? _currentAlertLocation;
   String? _routeId;
 
+  //Variables para tiempo y distancia
+  double? _distanceToLastLocation;
+  double? _timeToLastLocation;
+
   List<LatLng> routeCoordinates = [];
   List<Map<String, dynamic>> routeLocations = [];
   List<Map<String, dynamic>> locations = [];
@@ -84,6 +88,35 @@ class _MapPageState extends State<MapPage> {
   void dispose() {
     positionStream?.cancel(); // Cancela la suscripción al stream
     super.dispose();
+  }
+
+  Future<void> _calculateDistanceAndTime() async {
+    if (currentLocation == null || routeCoordinates.isEmpty) return;
+
+    LatLng lastLocation = routeCoordinates.last;
+    String coordinates =
+        '${currentLocation!.longitude},${currentLocation!.latitude};${lastLocation.longitude},${lastLocation.latitude}';
+
+    String url =
+        'https://router.project-osrm.org/route/v1/driving/$coordinates?overview=false&geometries=geojson&steps=true';
+
+    var response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      var json = jsonDecode(response.body);
+      var route = json['routes'][0];
+      setState(() {
+        _distanceToLastLocation =
+            route['distance'] / 1000; // Convertir a kilómetros
+        _timeToLastLocation = route['duration'] / 60; // Convertir a minutos
+      });
+    } else {
+      // Manejo de error
+      setState(() {
+        _distanceToLastLocation = null;
+        _timeToLastLocation = null;
+      });
+    }
   }
 
   Future<void> _checkPermissions() async {
@@ -299,8 +332,9 @@ class _MapPageState extends State<MapPage> {
           _showRoute = true; // Mostrar la ruta después de calcularla
         });
       }
+      _calculateDistanceAndTime(); // Calcular distancia y tiempo después de calcular la ruta
     } else {
-      //Exception
+      // Exception
     }
   }
 
@@ -431,6 +465,8 @@ class _MapPageState extends State<MapPage> {
                           ? routeLocations[0]['imageUrl'] as String
                           : 'https://via.placeholder.com/150',
                       onCancel: _toggleRouteVisibility,
+                      distance: _distanceToLastLocation, // Añadir esta línea
+                      time: _timeToLastLocation, // Añadir esta línea
                     ),
                   ),
               ],
