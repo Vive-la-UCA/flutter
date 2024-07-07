@@ -17,7 +17,7 @@ import 'package:vive_la_uca/widgets/location_marker.dart';
 class MapPage extends StatefulWidget {
   final String? routeId;
 
-  const MapPage({Key? key, this.routeId = '6689428fa454b9cd7b34d287'}) : super(key: key);
+  const MapPage({Key? key, this.routeId}) : super(key: key);
 
   @override
   _MapPageState createState() => _MapPageState();
@@ -303,7 +303,8 @@ class _MapPageState extends State<MapPage> {
                   _routePoints.clear();
                   routeCoordinates.clear();
                   routeLocations.clear();
-                  _routeId = null; // Limpiar el routeId para evitar futuras peticiones
+                  _routeId =
+                      null; // Limpiar el routeId para evitar futuras peticiones
                 });
                 Navigator.of(context).pop();
               },
