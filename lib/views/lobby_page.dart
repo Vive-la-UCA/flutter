@@ -154,7 +154,7 @@ class _LobbyPageState extends State<LobbyPage> {
                                   title: location['name'],
                                   description: location['description'],
                                   distance: '',
-                                  redirect: '/home',
+                                  redirect: '/location/${location['uid']}',
                                   uid: location['uid'],
                                 );
                               },
