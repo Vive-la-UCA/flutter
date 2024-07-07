@@ -17,12 +17,13 @@ import 'package:vive_la_uca/widgets/location_marker.dart';
 import 'package:vive_la_uca/widgets/bottom_info_route.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 class MapPage extends StatefulWidget {
   final String? routeId;
   final String? routeName;
+  final String? routeImage;
 
-  const MapPage({Key? key, this.routeId, this.routeName}) : super(key: key);
+  const MapPage({Key? key, this.routeId, this.routeName, this.routeImage})
+      : super(key: key);
 
   @override
   _MapPageState createState() => _MapPageState();
@@ -34,6 +35,7 @@ class _MapPageState extends State<MapPage> {
   List<LatLng> _routePoints = [];
   bool _showRoute = false;
   StreamSubscription<Position>? positionStream;
+  Map<String, dynamic>? _nearestLocation;
   Set<String> visitedLocations = {};
   Position? _previousPosition;
   final List<LatLng> _locationHistory = [];
@@ -51,42 +53,42 @@ class _MapPageState extends State<MapPage> {
   List<Map<String, dynamic>> locations = [];
 
   @override
-void initState() {
-  super.initState();
-  _routeId = widget.routeId;
-  _checkPermissions();
-  _loadToken();
-  _loadVisitedLocations();
+  void initState() {
+    super.initState();
+    _routeId = widget.routeId;
+    _checkPermissions();
+    _loadToken();
+    _loadVisitedLocations();
 
-  positionStream = Geolocator.getPositionStream(
-    locationSettings: const LocationSettings(
-      accuracy: LocationAccuracy.bestForNavigation,
-      distanceFilter: 0,
-    ),
-  ).listen((Position position) {
-    if (_previousPosition == null ||
-        Geolocator.distanceBetween(
-              _previousPosition!.latitude,
-              _previousPosition!.longitude,
-              position.latitude,
-              position.longitude,
-            ) >
-            minDistance) {
-      LatLng smoothedLocation = _getSmoothedLocation(
-        LatLng(position.latitude, position.longitude),
-      );
-      if (mounted) {
-        // Verifica si el widget sigue montado
-        setState(() {
-          currentLocation = smoothedLocation;
-          _previousPosition = position;
-        });
-        _checkProximity();
-        _saveVisitedLocations();
+    positionStream = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 0,
+      ),
+    ).listen((Position position) {
+      if (_previousPosition == null ||
+          Geolocator.distanceBetween(
+                _previousPosition!.latitude,
+                _previousPosition!.longitude,
+                position.latitude,
+                position.longitude,
+              ) >
+              minDistance) {
+        LatLng smoothedLocation = _getSmoothedLocation(
+          LatLng(position.latitude, position.longitude),
+        );
+        if (mounted) {
+          // Verifica si el widget sigue montado
+          setState(() {
+            currentLocation = smoothedLocation;
+            _previousPosition = position;
+          });
+          _checkProximity();
+          _saveVisitedLocations();
+        }
       }
-    }
-  });
-}
+    });
+  }
 
   @override
   void dispose() {
@@ -102,7 +104,7 @@ void initState() {
         '${currentLocation!.longitude},${currentLocation!.latitude};${lastLocation.longitude},${lastLocation.latitude}';
 
     String url =
-        'https://router.project-osrm.org/route/v1/driving/$coordinates?overview=false&geometries=geojson&steps=true';
+        'https://router.project-osrm.org/route/v1/walking/$coordinates?overview=false&geometries=geojson&steps=true';
 
     var response = await http.get(Uri.parse(url));
 
@@ -111,7 +113,7 @@ void initState() {
       var route = json['routes'][0];
       setState(() {
         _distanceToLastLocation =
-            route['distance'] / 1000; // Convertir a kilómetros
+            route['distance'] / 100; // Convertir a kilómetros
         _timeToLastLocation = route['duration'] / 60; // Convertir a minutos
       });
     } else {
@@ -214,19 +216,19 @@ void initState() {
   }
 
   Future<void> _saveVisitedLocations() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  prefs.setStringList('visitedLocations', visitedLocations.toList());
-}
-
-Future<void> _loadVisitedLocations() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  List<String>? savedLocations = prefs.getStringList('visitedLocations');
-  if (savedLocations != null) {
-    setState(() {
-      visitedLocations = savedLocations.toSet();
-    });
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setStringList('visitedLocations', visitedLocations.toList());
   }
-}
+
+  Future<void> _loadVisitedLocations() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? savedLocations = prefs.getStringList('visitedLocations');
+    if (savedLocations != null) {
+      setState(() {
+        visitedLocations = savedLocations.toSet();
+      });
+    }
+  }
 
   void _sortRouteLocationsByDistance() {
     if (currentLocation != null) {
@@ -288,27 +290,41 @@ Future<void> _loadVisitedLocations() async {
   }
 
   void _checkProximity() {
-  if (currentLocation == null) return;
+    if (currentLocation == null) return;
 
-  for (var location in locations) {
-    double distance = Geolocator.distanceBetween(
-      currentLocation!.latitude,
-      currentLocation!.longitude,
-      location['coordinates'].latitude,
-      location['coordinates'].longitude,
-    );
+    Map<String, dynamic>? nearest;
+    double? minDistance;
 
-    if (distance <= 20.0 && !visitedLocations.contains(location['name'])) {
-      _showProximityAlert(location['name']);
+    for (var location in routeLocations) {
+      // Cambiar locations por routeLocations
+      double distance = Geolocator.distanceBetween(
+        currentLocation!.latitude,
+        currentLocation!.longitude,
+        location['coordinates'].latitude,
+        location['coordinates'].longitude,
+      );
+
+      if (minDistance == null || distance < minDistance) {
+        minDistance = distance;
+        nearest = location;
+      }
+
+      if (distance <= 20.0 && !visitedLocations.contains(location['name'])) {
+        _showProximityAlert(location['name']);
+        setState(() {
+          visitedLocations.add(location['name']);
+        });
+        _saveVisitedLocations();
+        break;
+      }
+    }
+
+    if (nearest != _nearestLocation) {
       setState(() {
-        visitedLocations.add(location['name']);
+        _nearestLocation = nearest;
       });
-      _saveVisitedLocations();
-      break;
     }
   }
-}
-
 
   void _showProximityAlert(String locationName) {
     setState(() {
@@ -488,8 +504,10 @@ Future<void> _loadVisitedLocations() async {
                           ? routeLocations[0]['imageUrl'] as String
                           : 'https://via.placeholder.com/150',
                       onCancel: _toggleRouteVisibility,
-                      distance: _distanceToLastLocation, // Añadir esta línea
-                      time: _timeToLastLocation, // Añadir esta línea
+                      distance: _distanceToLastLocation,
+                      time: _timeToLastLocation,
+                      nearestLocation: _nearestLocation?['name'],
+                      imageRoute: widget.routeImage,
                     ),
                   ),
               ],
