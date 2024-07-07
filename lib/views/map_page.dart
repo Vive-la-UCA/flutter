@@ -14,7 +14,10 @@ import 'package:vive_la_uca/widgets/location_details_bottomsheet.dart';
 import 'package:vive_la_uca/widgets/location_marker.dart';
 
 class MapPage extends StatefulWidget {
-  const MapPage({Key? key}) : super(key: key);
+  final String? routeId;
+
+  const MapPage({Key? key, this.routeId = '6689428fa454b9cd7b34d287'})
+      : super(key: key);
 
   @override
   _MapPageState createState() => _MapPageState();
@@ -24,6 +27,7 @@ class _MapPageState extends State<MapPage> {
   LatLng? currentLocation;
   final MapController _mapController = MapController();
   List<LatLng> _routePoints = [];
+  bool _showRoute = false;
 
   Set<String> visitedLocations = {};
   Position? _previousPosition;
@@ -33,6 +37,7 @@ class _MapPageState extends State<MapPage> {
   String? _currentAlertLocation;
   final List<LatLng> _traveledRoutePoints = [];
   List<LatLng> _remainingRoutePoints = [];
+  String? _routeId;
 
   List<LatLng> routeCoordinates = [];
   List<Map<String, dynamic>> routeLocations = [];
@@ -41,8 +46,11 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
+    _routeId = widget.routeId;
     _determinePosition();
-    _loadToken();
+    if (_routeId != null) {
+      _loadToken();
+    }
 
     Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
@@ -100,12 +108,11 @@ class _MapPageState extends State<MapPage> {
 
   void _loadToken() async {
     final token = await TokenStorage.getToken();
-    if (token != null) {
+    if (token != null && _routeId != null) {
       final routeService =
           RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
 
-      const routeId = '6688bfe1a454b9cd7b34d11a';
-      final routeResponse = await routeService.getOneRoute(token, routeId);
+      final routeResponse = await routeService.getOneRoute(token, _routeId!);
       final locationsFromRoute = routeResponse['locations'];
 
       setState(() {
@@ -143,6 +150,7 @@ class _MapPageState extends State<MapPage> {
                   location['image'],
             };
           }).toList();
+          _sortRouteLocationsByDistance();
           _calculateRoute();
         });
       }
@@ -150,6 +158,30 @@ class _MapPageState extends State<MapPage> {
       setState(() {
         //Exception
       });
+    }
+  }
+
+  void _sortRouteLocationsByDistance() {
+    if (currentLocation != null) {
+      routeLocations.sort((a, b) {
+        final aDistance = Geolocator.distanceBetween(
+          currentLocation!.latitude,
+          currentLocation!.longitude,
+          a['coordinates'].latitude,
+          a['coordinates'].longitude,
+        );
+        final bDistance = Geolocator.distanceBetween(
+          currentLocation!.latitude,
+          currentLocation!.longitude,
+          b['coordinates'].latitude,
+          b['coordinates'].longitude,
+        );
+        return aDistance.compareTo(bDistance);
+      });
+
+      routeCoordinates = routeLocations.map((location) {
+        return location['coordinates'] as LatLng;
+      }).toList();
     }
   }
 
@@ -179,7 +211,9 @@ class _MapPageState extends State<MapPage> {
       setState(() {
         currentLocation = LatLng(position.latitude, position.longitude);
       });
-      _calculateRoute();
+      if (_routeId != null) {
+        _calculateRoute();
+      }
       _checkProximity();
     } catch (e) {
       // Excepcion
@@ -199,7 +233,7 @@ class _MapPageState extends State<MapPage> {
 
       if (distance <= 20.0 && !visitedLocations.contains(location['name'])) {
         _showProximityAlert(location['name']);
-        visitedLocations.add(location['_id']);
+        visitedLocations.add(location['name']);
         break;
       }
     }
@@ -223,7 +257,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _calculateRoute() async {
-    if (currentLocation == null) return;
+    if (currentLocation == null || _routeId == null) return;
 
     List<LatLng> waypoints = [currentLocation!, ...routeCoordinates];
 
@@ -243,6 +277,7 @@ class _MapPageState extends State<MapPage> {
         _routePoints =
             coordinates.map((point) => LatLng(point[1], point[0])).toList();
         _remainingRoutePoints = List.from(_routePoints);
+        _showRoute = true; // Mostrar la ruta después de calcularla
       });
     } else {
       //Exception
@@ -253,6 +288,41 @@ class _MapPageState extends State<MapPage> {
     if (currentLocation != null) {
       _mapController.move(currentLocation!, 18.0);
     }
+  }
+
+  void _toggleRouteVisibility() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmación'),
+          content: const Text(
+              '¿Estás seguro de finalizar la ruta? Tu progreso no se guardará.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancelar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Finalizar'),
+              onPressed: () {
+                setState(() {
+                  _showRoute = false;
+                  _routePoints.clear();
+                  routeCoordinates.clear();
+                  routeLocations.clear();
+                  _routeId =
+                      null; // Limpiar el routeId para evitar futuras peticiones
+                });
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -296,6 +366,32 @@ class _MapPageState extends State<MapPage> {
                     ),
                   ],
                 ),
+                if (_showRoute)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: _routePoints,
+                        strokeWidth: 6.0,
+                        color: Colors.blue.shade100,
+                        borderColor: Colors.blue.shade300,
+                        borderStrokeWidth: 5,
+                        isDotted: false,
+                      ),
+                    ],
+                  ),
+                if (_showRoute)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: _routePoints,
+                        strokeWidth: 10.0,
+                        color: const Color.fromARGB(255, 61, 122, 228),
+                        borderColor: const Color.fromARGB(255, 51, 101, 187),
+                        borderStrokeWidth: 2,
+                        isDotted: true,
+                      ),
+                    ],
+                  ),
                 MarkerLayer(
                   markers: LocationMarkers.buildMarkers(
                       locations, _showLocationDetails),
@@ -315,16 +411,34 @@ class _MapPageState extends State<MapPage> {
                 ),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _moveToCurrentLocation,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 6.0,
-        shape: const CircleBorder(),
-        child: const Icon(
-          Icons.my_location,
-          size: 24.0,
-        ),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          if (_showRoute) // Mostrar solo si hay una ruta activa
+            FloatingActionButton(
+              onPressed: _toggleRouteVisibility,
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              elevation: 6.0,
+              shape: const CircleBorder(),
+              child: const Icon(
+                Icons.cancel,
+                size: 24.0,
+              ),
+            ),
+          const SizedBox(height: 10),
+          FloatingActionButton(
+            onPressed: _moveToCurrentLocation,
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black,
+            elevation: 6.0,
+            shape: const CircleBorder(),
+            child: const Icon(
+              Icons.my_location,
+              size: 24.0,
+            ),
+          ),
+        ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
