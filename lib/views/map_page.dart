@@ -15,6 +15,8 @@ import 'package:vive_la_uca/services/route_service.dart';
 import 'package:vive_la_uca/widgets/location_details_bottomsheet.dart';
 import 'package:vive_la_uca/widgets/location_marker.dart';
 import 'package:vive_la_uca/widgets/bottom_info_route.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class MapPage extends StatefulWidget {
   final String? routeId;
@@ -49,40 +51,42 @@ class _MapPageState extends State<MapPage> {
   List<Map<String, dynamic>> locations = [];
 
   @override
-  void initState() {
-    super.initState();
-    _routeId = widget.routeId;
-    _checkPermissions();
-    _loadToken();
+void initState() {
+  super.initState();
+  _routeId = widget.routeId;
+  _checkPermissions();
+  _loadToken();
+  _loadVisitedLocations();
 
-    positionStream = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.bestForNavigation,
-        distanceFilter: 0,
-      ),
-    ).listen((Position position) {
-      if (_previousPosition == null ||
-          Geolocator.distanceBetween(
-                _previousPosition!.latitude,
-                _previousPosition!.longitude,
-                position.latitude,
-                position.longitude,
-              ) >
-              minDistance) {
-        LatLng smoothedLocation = _getSmoothedLocation(
-          LatLng(position.latitude, position.longitude),
-        );
-        if (mounted) {
-          // Verifica si el widget sigue montado
-          setState(() {
-            currentLocation = smoothedLocation;
-            _previousPosition = position;
-          });
-          _checkProximity();
-        }
+  positionStream = Geolocator.getPositionStream(
+    locationSettings: const LocationSettings(
+      accuracy: LocationAccuracy.bestForNavigation,
+      distanceFilter: 0,
+    ),
+  ).listen((Position position) {
+    if (_previousPosition == null ||
+        Geolocator.distanceBetween(
+              _previousPosition!.latitude,
+              _previousPosition!.longitude,
+              position.latitude,
+              position.longitude,
+            ) >
+            minDistance) {
+      LatLng smoothedLocation = _getSmoothedLocation(
+        LatLng(position.latitude, position.longitude),
+      );
+      if (mounted) {
+        // Verifica si el widget sigue montado
+        setState(() {
+          currentLocation = smoothedLocation;
+          _previousPosition = position;
+        });
+        _checkProximity();
+        _saveVisitedLocations();
       }
-    });
-  }
+    }
+  });
+}
 
   @override
   void dispose() {
@@ -209,6 +213,21 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
+  Future<void> _saveVisitedLocations() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  prefs.setStringList('visitedLocations', visitedLocations.toList());
+}
+
+Future<void> _loadVisitedLocations() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  List<String>? savedLocations = prefs.getStringList('visitedLocations');
+  if (savedLocations != null) {
+    setState(() {
+      visitedLocations = savedLocations.toSet();
+    });
+  }
+}
+
   void _sortRouteLocationsByDistance() {
     if (currentLocation != null) {
       routeLocations.sort((a, b) {
@@ -269,23 +288,27 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _checkProximity() {
-    if (currentLocation == null) return;
+  if (currentLocation == null) return;
 
-    for (var location in routeLocations) {
-      double distance = Geolocator.distanceBetween(
-        currentLocation!.latitude,
-        currentLocation!.longitude,
-        location['coordinates'].latitude,
-        location['coordinates'].longitude,
-      );
+  for (var location in locations) {
+    double distance = Geolocator.distanceBetween(
+      currentLocation!.latitude,
+      currentLocation!.longitude,
+      location['coordinates'].latitude,
+      location['coordinates'].longitude,
+    );
 
-      if (distance <= 20.0 && !visitedLocations.contains(location['name'])) {
-        _showProximityAlert(location['name']);
+    if (distance <= 20.0 && !visitedLocations.contains(location['name'])) {
+      _showProximityAlert(location['name']);
+      setState(() {
         visitedLocations.add(location['name']);
-        break;
-      }
+      });
+      _saveVisitedLocations();
+      break;
     }
   }
+}
+
 
   void _showProximityAlert(String locationName) {
     setState(() {
@@ -432,7 +455,7 @@ class _MapPageState extends State<MapPage> {
                       ),
                     MarkerLayer(
                       markers: LocationMarkers.buildMarkers(
-                          locations, _showLocationDetails),
+                          locations, visitedLocations, _showLocationDetails),
                     ),
                     CurrentLocationLayer(
                       style: const LocationMarkerStyle(
