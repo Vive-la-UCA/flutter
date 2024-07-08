@@ -21,9 +21,17 @@ class MapPage extends StatefulWidget {
   final String? routeId;
   final String? routeName;
   final String? routeImage;
+  final double? distanceToLastLocation;
+  final double? timeToLastLocation;
 
-  const MapPage({Key? key, this.routeId, this.routeName, this.routeImage})
-      : super(key: key);
+  const MapPage({
+    Key? key,
+    this.routeId,
+    this.routeName,
+    this.routeImage,
+    this.distanceToLastLocation,
+    this.timeToLastLocation,
+  }) : super(key: key);
 
   @override
   _MapPageState createState() => _MapPageState();
@@ -44,14 +52,9 @@ class _MapPageState extends State<MapPage> {
   String? _currentAlertLocation;
   String? _routeId;
 
-  //Variables para tiempo y distancia
-  double? _distanceToLastLocation;
-  double? _timeToLastLocation;
-
   List<LatLng> routeCoordinates = [];
   List<Map<String, dynamic>> routeLocations = [];
   List<Map<String, dynamic>> locations = [];
-
   @override
   void initState() {
     super.initState();
@@ -94,35 +97,6 @@ class _MapPageState extends State<MapPage> {
   void dispose() {
     positionStream?.cancel(); // Cancela la suscripción al stream
     super.dispose();
-  }
-
-  Future<void> _calculateDistanceAndTime() async {
-    if (currentLocation == null || routeCoordinates.isEmpty) return;
-
-    LatLng lastLocation = routeCoordinates.last;
-    String coordinates =
-        '${currentLocation!.longitude},${currentLocation!.latitude};${lastLocation.longitude},${lastLocation.latitude}';
-
-    String url =
-        'https://router.project-osrm.org/route/v1/walking/$coordinates?overview=false&geometries=geojson&steps=true';
-
-    var response = await http.get(Uri.parse(url));
-
-    if (response.statusCode == 200) {
-      var json = jsonDecode(response.body);
-      var route = json['routes'][0];
-      setState(() {
-        _distanceToLastLocation =
-            route['distance'] / 100; // Convertir a kilómetros
-        _timeToLastLocation = route['duration'] / 60; // Convertir a minutos
-      });
-    } else {
-      // Manejo de error
-      setState(() {
-        _distanceToLastLocation = null;
-        _timeToLastLocation = null;
-      });
-    }
   }
 
   Future<void> _checkPermissions() async {
@@ -371,7 +345,7 @@ class _MapPageState extends State<MapPage> {
           _showRoute = true; // Mostrar la ruta después de calcularla
         });
       }
-      _calculateDistanceAndTime(); // Calcular distancia y tiempo después de calcular la ruta
+      // _calculateDistanceAndTime(); // Esta línea ya no es necesaria
     } else {
       // Exception
     }
@@ -504,8 +478,8 @@ class _MapPageState extends State<MapPage> {
                           ? routeLocations[0]['imageUrl'] as String
                           : 'https://via.placeholder.com/150',
                       onCancel: _toggleRouteVisibility,
-                      distance: _distanceToLastLocation,
-                      time: _timeToLastLocation,
+                      distance: widget.distanceToLastLocation,
+                      time: widget.timeToLastLocation,
                       nearestLocation: _nearestLocation?['name'],
                       imageRoute: widget.routeImage,
                     ),

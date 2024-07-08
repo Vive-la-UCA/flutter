@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:vive_la_uca/services/route_service.dart';
 import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/views/map_page.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class RouteInfo extends StatefulWidget {
   final String uid;
@@ -14,6 +18,10 @@ class RouteInfo extends StatefulWidget {
 class _RouteInfoState extends State<RouteInfo> {
   bool _isLoading = true;
   Map<String, dynamic>? _routeData;
+
+  // Variables que calculan la distancia y el tiempo de la ruta
+  double? _distanceToLastLocation;
+  double? _timeToLastLocation;
 
   @override
   void initState() {
@@ -37,11 +45,70 @@ class _RouteInfoState extends State<RouteInfo> {
     }
   }
 
+  Future<LatLng?> _getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Verificar si los servicios de ubicación están habilitados
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Los servicios de ubicación no están habilitados, no se puede proceder
+      return null;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        // Los permisos de ubicación están denegados
+        return null;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // Los permisos están denegados para siempre, no se puede proceder
+      return null;
+    }
+
+    Position position = await Geolocator.getCurrentPosition();
+    return LatLng(position.latitude, position.longitude);
+  }
+
+  Future<void> _calculateDistanceAndTime(
+      LatLng currentLocation, List<LatLng> routeCoordinates) async {
+    if (routeCoordinates.isEmpty) return;
+
+    LatLng lastLocation = routeCoordinates.last;
+    String coordinates =
+        '${currentLocation.longitude},${currentLocation.latitude};${lastLocation.longitude},${lastLocation.latitude}';
+
+    String url =
+        'https://router.project-osrm.org/route/v1/walking/$coordinates?overview=false&geometries=geojson&steps=true';
+
+    var response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      var json = jsonDecode(response.body);
+      var route = json['routes'][0];
+      setState(() {
+        _distanceToLastLocation =
+            route['distance'] / 100; // Convertir a kilómetros
+        _timeToLastLocation = route['duration'] / 60; // Convertir a minutos
+      });
+    } else {
+      // Manejo de error
+      setState(() {
+        _distanceToLastLocation = null;
+        _timeToLastLocation = null;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : _buildRouteContent(),
     );
   }
@@ -66,10 +133,8 @@ class _RouteInfoState extends State<RouteInfo> {
                   width: double.infinity, height: 350, fit: BoxFit.cover),
               Container(
                 width: double.infinity,
-                height:
-                    350, // Make sure the overlay covers the entire image area
-                color: Colors.black
-                    .withOpacity(0.3), // Black color with 80% opacity
+                height: 350,
+                color: Colors.black.withOpacity(0.3),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -77,7 +142,7 @@ class _RouteInfoState extends State<RouteInfo> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(name,
-                          style: TextStyle(
+                          style: const TextStyle(
                               color: Colors.white,
                               fontSize: 28,
                               fontWeight: FontWeight.bold)),
@@ -85,7 +150,7 @@ class _RouteInfoState extends State<RouteInfo> {
                         onPressed: startRoute,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange,
-                          padding: EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 10),
                         ),
                         child: Row(
@@ -94,6 +159,24 @@ class _RouteInfoState extends State<RouteInfo> {
                             Text(' Empezar ',
                                 style: TextStyle(color: Colors.white)),
                             Icon(Icons.play_arrow, color: Colors.white),
+                            if (_distanceToLastLocation != null &&
+                                _timeToLastLocation != null)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 10),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${_timeToLastLocation!.toStringAsFixed(0)} min',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                    Text(
+                                      '(${_distanceToLastLocation!.toStringAsFixed(1)} km)',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ],
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -156,19 +239,34 @@ class _RouteInfoState extends State<RouteInfo> {
     );
   }
 
-  void startRoute() {
+  void startRoute() async {
     if (_routeData != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MapPage(
+      final currentLocation = await _getCurrentLocation();
+      if (currentLocation != null) {
+        final routeCoordinates = _routeData!['locations']
+            .map<LatLng>((location) =>
+                LatLng(location['latitude'], location['longitude']))
+            .toList();
+
+        await _calculateDistanceAndTime(currentLocation, routeCoordinates);
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MapPage(
               routeId: widget.uid,
               routeName: _routeData?['name'] ?? 'Ruta desconocida',
               routeImage: 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
                   (_routeData?['image'] ??
-                      'https://via.placeholder.com/400x300')), // Añadir esta línea
-        ),
-      );
+                      'https://via.placeholder.com/400x300'),
+              distanceToLastLocation: _distanceToLastLocation,
+              timeToLastLocation: _timeToLastLocation,
+            ),
+          ),
+        );
+      } else {
+        print('No current location available');
+      }
     } else {
       print('No route data available to start route');
     }
