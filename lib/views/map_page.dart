@@ -9,13 +9,15 @@ import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:vive_la_uca/services/location_service.dart';
-import 'package:vive_la_uca/widgets/dialog_route.dart';
+import 'package:vive_la_uca/widgets/dialog_location.dart';
 import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/services/route_service.dart';
 import 'package:vive_la_uca/widgets/location_details_bottomsheet.dart';
 import 'package:vive_la_uca/widgets/location_marker.dart';
 import 'package:vive_la_uca/widgets/bottom_info_route.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:go_router/go_router.dart'; // Importa go_router
+import 'package:vive_la_uca/widgets/dialog_route.dart'; // Importa CustomDialogRoute
 
 class MapPage extends StatefulWidget {
   final String? routeId;
@@ -49,7 +51,6 @@ class _MapPageState extends State<MapPage> {
   final List<LatLng> _locationHistory = [];
   static const int historyLength = 5;
   static const double minDistance = 1.0;
-  String? _currentAlertLocation;
   String? _routeId;
 
   List<LatLng> routeCoordinates = [];
@@ -81,7 +82,6 @@ class _MapPageState extends State<MapPage> {
           LatLng(position.latitude, position.longitude),
         );
         if (mounted) {
-          // Verifica si el widget sigue montado
           setState(() {
             currentLocation = smoothedLocation;
             _previousPosition = position;
@@ -95,7 +95,7 @@ class _MapPageState extends State<MapPage> {
 
   @override
   void dispose() {
-    positionStream?.cancel(); // Cancela la suscripción al stream
+    positionStream?.cancel();
     super.dispose();
   }
 
@@ -105,7 +105,6 @@ class _MapPageState extends State<MapPage> {
     if (status.isGranted) {
       _determinePosition();
     } else if (status.isDenied || status.isPermanentlyDenied) {
-      // Handle permission denied
       openAppSettings();
     }
   }
@@ -131,7 +130,6 @@ class _MapPageState extends State<MapPage> {
         final locationsFromRoute = routeResponse['locations'];
 
         if (mounted) {
-          // Verifica si el widget sigue montado
           setState(() {
             routeCoordinates = locationsFromRoute.map<LatLng>((location) {
               return LatLng(location['latitude'], location['longitude']);
@@ -159,7 +157,6 @@ class _MapPageState extends State<MapPage> {
       if (locationResponse != null) {
         print('Location Response: ${locationResponse.length} locations');
         if (mounted) {
-          // Verifica si el widget sigue montado
           setState(() {
             locations = locationResponse.map<Map<String, dynamic>>((location) {
               return {
@@ -181,7 +178,6 @@ class _MapPageState extends State<MapPage> {
       }
     } else {
       if (mounted) {
-        // Verifica si el widget sigue montado
         setState(() {
           // Manejo de error
         });
@@ -206,21 +202,31 @@ class _MapPageState extends State<MapPage> {
 
   void _sortRouteLocationsByDistance() {
     if (currentLocation != null) {
-      routeLocations.sort((a, b) {
-        final aDistance = Geolocator.distanceBetween(
+      List<Map<String, dynamic>> locationWithDistance = [];
+
+      for (var location in routeLocations) {
+        final distance = Geolocator.distanceBetween(
           currentLocation!.latitude,
           currentLocation!.longitude,
-          a['coordinates'].latitude,
-          a['coordinates'].longitude,
+          location['coordinates'].latitude,
+          location['coordinates'].longitude,
         );
-        final bDistance = Geolocator.distanceBetween(
-          currentLocation!.latitude,
-          currentLocation!.longitude,
-          b['coordinates'].latitude,
-          b['coordinates'].longitude,
-        );
-        return aDistance.compareTo(bDistance);
+        locationWithDistance.add({...location, 'distance': distance});
+      }
+
+      locationWithDistance.sort((a, b) {
+        return a['distance'].compareTo(b['distance']);
       });
+
+      routeLocations = locationWithDistance.map((location) {
+        return {
+          '_id': location['_id'],
+          'name': location['name'],
+          'description': location['description'],
+          'coordinates': location['coordinates'],
+          'imageUrl': location['imageUrl']
+        };
+      }).toList();
 
       routeCoordinates = routeLocations.map((location) {
         return location['coordinates'] as LatLng;
@@ -270,7 +276,6 @@ class _MapPageState extends State<MapPage> {
     double? minDistance;
 
     for (var location in routeLocations) {
-      // Cambiar locations por routeLocations
       double distance = Geolocator.distanceBetween(
         currentLocation!.latitude,
         currentLocation!.longitude,
@@ -284,11 +289,12 @@ class _MapPageState extends State<MapPage> {
       }
 
       if (distance <= 20.0 && !visitedLocations.contains(location['name'])) {
-        _showProximityAlert(location['name']);
+        _showProximityAlert(location);
         setState(() {
           visitedLocations.add(location['name']);
         });
         _saveVisitedLocations();
+        _checkIfRouteCompleted();
         break;
       }
     }
@@ -300,21 +306,30 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  void _showProximityAlert(String locationName) {
-    setState(() {
-      _currentAlertLocation = locationName;
-    });
+  void _checkIfRouteCompleted() {
+    final routeLocationNames =
+        routeLocations.map((location) => location['name']).toSet();
+    if (visitedLocations.containsAll(routeLocationNames)) {
+      showCustomDialogRoute();
+    }
+  }
 
+  void showCustomDialogRoute() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return CustomDialog(locationName: locationName);
+        return CustomDialogRoute(locationName: "última ubicación");
       },
-    ).then((_) {
-      setState(() {
-        _currentAlertLocation = null;
-      });
-    });
+    );
+  }
+
+  void _showProximityAlert(Map<String, dynamic> location) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CustomDialogLocation(location: location);
+      },
+    );
   }
 
   void _calculateRoute() async {
@@ -323,7 +338,7 @@ class _MapPageState extends State<MapPage> {
     List<LatLng> waypoints = [currentLocation!, ...routeCoordinates];
 
     if (waypoints.length <= 1) {
-      return; // No hay suficiente información para calcular la ruta
+      return;
     }
 
     String coordinates = waypoints
@@ -342,10 +357,9 @@ class _MapPageState extends State<MapPage> {
         setState(() {
           _routePoints =
               coordinates.map((point) => LatLng(point[1], point[0])).toList();
-          _showRoute = true; // Mostrar la ruta después de calcularla
+          _showRoute = true;
         });
       }
-      // _calculateDistanceAndTime(); // Esta línea ya no es necesaria
     } else {
       // Exception
     }
@@ -370,6 +384,7 @@ class _MapPageState extends State<MapPage> {
               child: const Text('Cancelar'),
               onPressed: () {
                 Navigator.of(context).pop();
+                // Navega a la ruta /home usando GoRouter
               },
             ),
             TextButton(
@@ -380,10 +395,10 @@ class _MapPageState extends State<MapPage> {
                   _routePoints.clear();
                   routeCoordinates.clear();
                   routeLocations.clear();
-                  _routeId =
-                      null; // Limpiar el routeId para evitar futuras peticiones
+                  _routeId = null;
                 });
                 Navigator.of(context).pop();
+                context.go('/home');
               },
             ),
           ],
@@ -395,9 +410,6 @@ class _MapPageState extends State<MapPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Map'),
-      ),
       body: currentLocation == null
           ? const Center(child: CircularProgressIndicator())
           : Stack(
@@ -484,20 +496,23 @@ class _MapPageState extends State<MapPage> {
                       imageRoute: widget.routeImage,
                     ),
                   ),
+                Positioned(
+                  bottom: _showRoute ? 240 : 16.0,
+                  right: 16.0,
+                  child: FloatingActionButton(
+                    onPressed: _moveToCurrentLocation,
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    elevation: 6.0,
+                    shape: const CircleBorder(),
+                    child: const Icon(
+                      Icons.my_location,
+                      size: 24.0,
+                    ),
+                  ),
+                ),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _moveToCurrentLocation,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 6.0,
-        shape: const CircleBorder(),
-        child: const Icon(
-          Icons.my_location,
-          size: 24.0,
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }

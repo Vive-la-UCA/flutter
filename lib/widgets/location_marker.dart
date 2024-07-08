@@ -46,7 +46,7 @@ class LocationMarkers {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isVisited ? Colors.orange : Colors.white,
+                    color: isVisited ? const Color(0xFF704FCE) : Colors.white,
                     width: 3,
                   ),
                   image: DecorationImage(

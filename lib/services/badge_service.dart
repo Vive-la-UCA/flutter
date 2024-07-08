@@ -41,4 +41,22 @@ class BadgeService {
       throw Exception('Failed to load routes');
     }
   }
+
+  Future<Map<String, dynamic>> getBadgeByRouteId(tokenKey, routeId) async {
+    final url = Uri.parse('$baseUrl/api/badge/route/$routeId');
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $tokenKey'
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['badge']; // Devuelve directamente la lista de rutas
+    } else {
+      throw Exception('Failed to load routes');
+    }
+  }
 }
