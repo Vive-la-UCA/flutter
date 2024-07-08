@@ -8,21 +8,22 @@ import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vive_la_uca/services/location_service.dart';
-import 'package:vive_la_uca/widgets/dialog_location.dart';
+import 'package:vive_la_uca/widgets/dialog_route.dart';
 import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/services/route_service.dart';
 import 'package:vive_la_uca/widgets/location_details_bottomsheet.dart';
 import 'package:vive_la_uca/widgets/location_marker.dart';
 import 'package:vive_la_uca/widgets/bottom_info_route.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MapPage extends StatefulWidget {
   final String? routeId;
   final String? routeName;
-  final String? imageUrl;
+  final String? routeImage;
 
-  const MapPage({Key? key, this.routeId, this.routeName, this.imageUrl}) : super(key: key);
+  const MapPage({Key? key, this.routeId, this.routeName, this.routeImage})
+      : super(key: key);
 
   @override
   _MapPageState createState() => _MapPageState();
@@ -34,11 +35,13 @@ class _MapPageState extends State<MapPage> {
   List<LatLng> _routePoints = [];
   bool _showRoute = false;
   StreamSubscription<Position>? positionStream;
+  Map<String, dynamic>? _nearestLocation;
   Set<String> visitedLocations = {};
   Position? _previousPosition;
   final List<LatLng> _locationHistory = [];
   static const int historyLength = 5;
   static const double minDistance = 1.0;
+  String? _currentAlertLocation;
   String? _routeId;
 
   //Variables para tiempo y distancia
@@ -101,7 +104,7 @@ class _MapPageState extends State<MapPage> {
         '${currentLocation!.longitude},${currentLocation!.latitude};${lastLocation.longitude},${lastLocation.latitude}';
 
     String url =
-        'https://router.project-osrm.org/route/v1/driving/$coordinates?overview=false&geometries=geojson&steps=true';
+        'https://router.project-osrm.org/route/v1/walking/$coordinates?overview=false&geometries=geojson&steps=true';
 
     var response = await http.get(Uri.parse(url));
 
@@ -110,7 +113,7 @@ class _MapPageState extends State<MapPage> {
       var route = json['routes'][0];
       setState(() {
         _distanceToLastLocation =
-            route['distance'] / 1000; // Convertir a kilómetros
+            route['distance'] / 100; // Convertir a kilómetros
         _timeToLastLocation = route['duration'] / 60; // Convertir a minutos
       });
     } else {
@@ -289,7 +292,11 @@ class _MapPageState extends State<MapPage> {
   void _checkProximity() {
     if (currentLocation == null) return;
 
-    for (var location in locations) {
+    Map<String, dynamic>? nearest;
+    double? minDistance;
+
+    for (var location in routeLocations) {
+      // Cambiar locations por routeLocations
       double distance = Geolocator.distanceBetween(
         currentLocation!.latitude,
         currentLocation!.longitude,
@@ -297,8 +304,13 @@ class _MapPageState extends State<MapPage> {
         location['coordinates'].longitude,
       );
 
+      if (minDistance == null || distance < minDistance) {
+        minDistance = distance;
+        nearest = location;
+      }
+
       if (distance <= 20.0 && !visitedLocations.contains(location['name'])) {
-        _showProximityAlert(location);
+        _showProximityAlert(location['name']);
         setState(() {
           visitedLocations.add(location['name']);
         });
@@ -306,15 +318,29 @@ class _MapPageState extends State<MapPage> {
         break;
       }
     }
+
+    if (nearest != _nearestLocation) {
+      setState(() {
+        _nearestLocation = nearest;
+      });
+    }
   }
 
-  void _showProximityAlert(Map<String, dynamic> location) {
+  void _showProximityAlert(String locationName) {
+    setState(() {
+      _currentAlertLocation = locationName;
+    });
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return CustomDialogLocation(location: location);
+        return CustomDialog(locationName: locationName);
       },
-    );
+    ).then((_) {
+      setState(() {
+        _currentAlertLocation = null;
+      });
+    });
   }
 
   void _calculateRoute() async {
@@ -478,8 +504,10 @@ class _MapPageState extends State<MapPage> {
                           ? routeLocations[0]['imageUrl'] as String
                           : 'https://via.placeholder.com/150',
                       onCancel: _toggleRouteVisibility,
-                      distance: _distanceToLastLocation, // Añadir esta línea
-                      time: _timeToLastLocation, // Añadir esta línea
+                      distance: _distanceToLastLocation,
+                      time: _timeToLastLocation,
+                      nearestLocation: _nearestLocation?['name'],
+                      imageRoute: widget.routeImage,
                     ),
                   ),
               ],

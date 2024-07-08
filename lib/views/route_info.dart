@@ -162,9 +162,11 @@ class _RouteInfoState extends State<RouteInfo> {
         context,
         MaterialPageRoute(
           builder: (context) => MapPage(
-            routeId: widget.uid,
-            routeName: _routeData?['name'] ?? 'Ruta desconocida',
-          ),
+              routeId: widget.uid,
+              routeName: _routeData?['name'] ?? 'Ruta desconocida',
+              routeImage: 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                  (_routeData?['image'] ??
+                      'https://via.placeholder.com/400x300')), // Añadir esta línea
         ),
       );
     } else {
