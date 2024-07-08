@@ -4,7 +4,7 @@ import 'build_place_card.dart';
 class PlaceCardList extends StatelessWidget {
   final List<Map<String, String>> places;
 
-  const PlaceCardList({Key? key, required this.places}) : super(key: key);
+  const PlaceCardList({super.key, required this.places});
 
   @override
   Widget build(BuildContext context) {
@@ -54,9 +54,9 @@ class PlaceCardList extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.only(
-                top: 16.0,
+                top: 25.0,
                 bottom:
-                    20.0), // Agregar espacio suficiente en la parte superior
+                    25.0), // Agregar espacio suficiente en la parte superior
             child: Column(
               children: places.map((place) {
                 return Align(

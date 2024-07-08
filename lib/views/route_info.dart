@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -312,8 +314,7 @@ class _RouteInfoState extends State<RouteInfo> {
                 .map<Map<String, String>>((location) => {
                       'title': location['name'] as String,
                       'imageUrl':
-                          'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                              (location['image'] as String),
+                          'https://vivelauca.uca.edu.sv/admin-back/uploads/${location['image'] as String}',
                     })
                 .toList(),
           ),

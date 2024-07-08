@@ -10,8 +10,8 @@ class PlaceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: MediaQuery.of(context).size.width * 0.8,
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      width: MediaQuery.of(context).size.width * 0.7,
+      margin: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: const [
@@ -25,15 +25,17 @@ class PlaceCard extends StatelessWidget {
             borderRadius:
                 const BorderRadius.horizontal(left: Radius.circular(8)),
             child: Image.network(imageUrl,
-                width: 100, height: 100, fit: BoxFit.cover),
+                width: 80, height: 80, fit: BoxFit.cover),
           ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(8),
               child: Text(
                 title,
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 2,
               ),
