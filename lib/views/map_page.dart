@@ -16,7 +16,8 @@ import 'package:vive_la_uca/widgets/location_details_bottomsheet.dart';
 import 'package:vive_la_uca/widgets/location_marker.dart';
 import 'package:vive_la_uca/widgets/bottom_info_route.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:go_router/go_router.dart';  // Importa go_router
+import 'package:go_router/go_router.dart'; // Importa go_router
+import 'package:vive_la_uca/widgets/dialog_route.dart'; // Importa CustomDialogRoute
 
 class MapPage extends StatefulWidget {
   final String? routeId;
@@ -225,21 +226,31 @@ class _MapPageState extends State<MapPage> {
 
   void _sortRouteLocationsByDistance() {
     if (currentLocation != null) {
-      routeLocations.sort((a, b) {
-        final aDistance = Geolocator.distanceBetween(
+      List<Map<String, dynamic>> locationWithDistance = [];
+
+      for (var location in routeLocations) {
+        final distance = Geolocator.distanceBetween(
           currentLocation!.latitude,
           currentLocation!.longitude,
-          a['coordinates'].latitude,
-          a['coordinates'].longitude,
+          location['coordinates'].latitude,
+          location['coordinates'].longitude,
         );
-        final bDistance = Geolocator.distanceBetween(
-          currentLocation!.latitude,
-          currentLocation!.longitude,
-          b['coordinates'].latitude,
-          b['coordinates'].longitude,
-        );
-        return aDistance.compareTo(bDistance);
+        locationWithDistance.add({...location, 'distance': distance});
+      }
+
+      locationWithDistance.sort((a, b) {
+        return a['distance'].compareTo(b['distance']);
       });
+
+      routeLocations = locationWithDistance.map((location) {
+        return {
+          '_id': location['_id'],
+          'name': location['name'],
+          'description': location['description'],
+          'coordinates': location['coordinates'],
+          'imageUrl': location['imageUrl']
+        };
+      }).toList();
 
       routeCoordinates = routeLocations.map((location) {
         return location['coordinates'] as LatLng;
@@ -283,40 +294,59 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _checkProximity() {
-    if (currentLocation == null) return;
+  if (currentLocation == null) return;
 
-    Map<String, dynamic>? nearest;
-    double? minDistance;
+  Map<String, dynamic>? nearest;
+  double? minDistance;
 
-    for (var location in routeLocations) {
-      double distance = Geolocator.distanceBetween(
-        currentLocation!.latitude,
-        currentLocation!.longitude,
-        location['coordinates'].latitude,
-        location['coordinates'].longitude,
-      );
+  for (var location in routeLocations) {
+    double distance = Geolocator.distanceBetween(
+      currentLocation!.latitude,
+      currentLocation!.longitude,
+      location['coordinates'].latitude,
+      location['coordinates'].longitude,
+    );
 
-      if (minDistance == null || distance < minDistance) {
-        minDistance = distance;
-        nearest = location;
-      }
-
-      if (distance <= 20.0 && !visitedLocations.contains(location['name'])) {
-        _showProximityAlert(location);
-        setState(() {
-          visitedLocations.add(location['name']);
-        });
-        _saveVisitedLocations();
-        break;
-      }
+    if (minDistance == null || distance < minDistance) {
+      minDistance = distance;
+      nearest = location;
     }
 
-    if (nearest != _nearestLocation) {
+    if (distance <= 20.0 && !visitedLocations.contains(location['name'])) {
+      _showProximityAlert(location);
       setState(() {
-        _nearestLocation = nearest;
+        visitedLocations.add(location['name']);
       });
+      _saveVisitedLocations();
+      _checkIfRouteCompleted();
+      break;
     }
   }
+
+  if (nearest != _nearestLocation) {
+    setState(() {
+      _nearestLocation = nearest;
+    });
+  }
+}
+
+void _checkIfRouteCompleted() {
+  final routeLocationNames = routeLocations.map((location) => location['name']).toSet();
+  if (visitedLocations.containsAll(routeLocationNames)) {
+    showCustomDialogRoute();
+  }
+}
+
+void showCustomDialogRoute() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return CustomDialogRoute(locationName: "última ubicación");
+    },
+  );
+}
+
+
 
   void _showProximityAlert(Map<String, dynamic> location) {
     showDialog(
@@ -368,41 +398,40 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _toggleRouteVisibility() {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Confirmación'),
-        content: const Text(
-            '¿Estás seguro de finalizar la ruta? Tu progreso no se guardará.'),
-        actions: <Widget>[
-          TextButton(
-            child: const Text('Cancelar'),
-            onPressed: () {
-              Navigator.of(context).pop();
-               // Navega a la ruta /home usando GoRouter
-            },
-          ),
-          TextButton(
-            child: const Text('Finalizar'),
-            onPressed: () {
-              setState(() {
-                _showRoute = false;
-                _routePoints.clear();
-                routeCoordinates.clear();
-                routeLocations.clear();
-                _routeId = null;
-              });
-              Navigator.of(context).pop();
-              context.go('/home');
-            },
-          ),
-        ],
-      );
-    },
-  );
-}
-
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmación'),
+          content: const Text(
+              '¿Estás seguro de finalizar la ruta? Tu progreso no se guardará.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancelar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Navega a la ruta /home usando GoRouter
+              },
+            ),
+            TextButton(
+              child: const Text('Finalizar'),
+              onPressed: () {
+                setState(() {
+                  _showRoute = false;
+                  _routePoints.clear();
+                  routeCoordinates.clear();
+                  routeLocations.clear();
+                  _routeId = null;
+                });
+                Navigator.of(context).pop();
+                context.go('/home');
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
