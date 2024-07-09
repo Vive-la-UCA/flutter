@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/views/home_page.dart';
+import 'package:vive_la_uca/views/location_info.dart';
 import 'package:vive_la_uca/views/login_page.dart';
 import 'package:vive_la_uca/views/register_page.dart';
 import 'package:vive_la_uca/views/route_info.dart';
@@ -65,6 +66,13 @@ final GoRouter _router = GoRouter(
     GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
     GoRoute(path: '/home', builder: (context, state) => const HomePage()),
     GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+    GoRoute(
+      path: '/location/:uid',
+      builder: (context, state) {
+        final String uid = state.params['uid']!;
+        return LocationInfo(uid: uid);
+      },
+    ),
     GoRoute(
       path: '/route/:uid',
       builder: (context, state) {

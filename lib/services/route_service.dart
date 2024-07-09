@@ -21,6 +21,21 @@ class RouteService {
     }
   }
 
+  Future<List<dynamic>> getAllRoutes(tokenKey) async {
+    final url = Uri.parse('$baseUrl/api/route/all');
+    final response = await http.get(
+      url,
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $tokenKey'},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['routes']; // Devuelve directamente la lista de rutas
+    } else {
+      throw Exception('Failed to load all routes');
+    }
+  }
+
   Future<Map<String, dynamic>> getOneRoute(String tokenKey, String uid) async {
   final url = Uri.parse('$baseUrl/api/route/$uid');
   final response = await http.get(

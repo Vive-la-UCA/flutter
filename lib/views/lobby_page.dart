@@ -39,10 +39,10 @@ class _LobbyPageState extends State<LobbyPage> {
           _badgeIds = List<String>.from(userData['badges'] ?? []);
           futureRoutes =
               RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
-                  .getRoutes(token);
+                  .getAllRoutes(token);
           futureLocations = LocationService(
                   baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
-              .getLocations(token);
+              .getAllLocations(token);
           _isLoading = false;
         });
       } catch (e) {
@@ -203,7 +203,7 @@ class _LobbyPageState extends State<LobbyPage> {
                                   title: location['name'],
                                   description: location['description'],
                                   distance: '',
-                                  redirect: '/home',
+                                  redirect: '/location/${location['uid']}',
                                   uid: location['uid'],
                                 );
                               },
