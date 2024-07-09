@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-class CustomDialog extends StatelessWidget {
+class CustomDialogRoute extends StatelessWidget {
   final String locationName;
 
-  const CustomDialog({Key? key, required this.locationName}) : super(key: key);
+  const CustomDialogRoute({Key? key, required this.locationName}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
