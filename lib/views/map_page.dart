@@ -120,70 +120,75 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _loadToken() async {
-    final token = await TokenStorage.getToken();
-    if (token != null) {
-      final routeService =
-          RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
+  final token = await TokenStorage.getToken();
+  if (token != null) {
+    final routeService =
+        RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
 
-      if (_routeId != null) {
-        final routeResponse = await routeService.getOneRoute(token, _routeId!);
-        final locationsFromRoute = routeResponse['locations'];
+    if (_routeId != null) {
+      final routeResponse = await routeService.getOneRoute(token, _routeId!);
+      final locationsFromRoute = routeResponse['locations'];
 
-        if (mounted) {
-          setState(() {
-            routeCoordinates = locationsFromRoute.map<LatLng>((location) {
-              return LatLng(location['latitude'], location['longitude']);
-            }).toList();
-
-            routeLocations =
-                locationsFromRoute.map<Map<String, dynamic>>((location) {
-              return {
-                '_id': location['_id'],
-                'name': location['name'],
-                'description': location['description'],
-                'coordinates':
-                    LatLng(location['latitude'], location['longitude']),
-                'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                    location['image'],
-              };
-            }).toList();
-          });
-        }
-      }
-
-      final locationResponse = await LocationService(
-              baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
-          .getAllLocations(token);
-      if (locationResponse != null) {
-        print('Location Response: ${locationResponse.length} locations');
-        if (mounted) {
-          setState(() {
-            locations = locationResponse.map<Map<String, dynamic>>((location) {
-              return {
-                '_id': location['_id'],
-                'name': location['name'],
-                'description': location['description'],
-                'coordinates':
-                    LatLng(location['latitude'], location['longitude']),
-                'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                    location['image'],
-              };
-            }).toList();
-            _sortRouteLocationsByDistance();
-            if (_routeId != null) {
-              _calculateRoute();
-            }
-          });
-        }
-      }
-    } else {
       if (mounted) {
         setState(() {
-          // Manejo de error
+          routeCoordinates = locationsFromRoute.map<LatLng>((location) {
+            return LatLng(location['latitude'], location['longitude']);
+          }).toList();
+
+          routeLocations =
+              locationsFromRoute.map<Map<String, dynamic>>((location) {
+            return {
+              '_id': location['_id'],
+              'name': location['name'],
+              'description': location['description'],
+              'coordinates':
+                  LatLng(location['latitude'], location['longitude']),
+              'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                  location['image'],
+            };
+          }).toList();
+          _showRoute = true;
+        });
+
+        // Verificar si todas las localidades de la ruta ya han sido visitadas
+        _checkIfRouteCompleted();
+      }
+    }
+
+    final locationResponse = await LocationService(
+            baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
+        .getAllLocations(token);
+    if (locationResponse != null) {
+      print('Location Response: ${locationResponse.length} locations');
+      if (mounted) {
+        setState(() {
+          locations = locationResponse.map<Map<String, dynamic>>((location) {
+            return {
+              '_id': location['_id'],
+              'name': location['name'],
+              'description': location['description'],
+              'coordinates':
+                  LatLng(location['latitude'], location['longitude']),
+              'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                  location['image'],
+            };
+          }).toList();
+          _sortRouteLocationsByDistance();
+          if (_routeId != null) {
+            _calculateRoute();
+          }
         });
       }
     }
+  } else {
+    if (mounted) {
+      setState(() {
+        // Manejo de error
+      });
+    }
   }
+}
+
 
   Future<void> _saveVisitedLocations() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -270,41 +275,66 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _checkProximity() {
-    if (currentLocation == null) return;
+  if (currentLocation == null) return;
 
-    Map<String, dynamic>? nearest;
-    double? minDistance;
+  Map<String, dynamic>? nearest;
+  double? minDistance;
 
-    for (var location in routeLocations) {
-      double distance = Geolocator.distanceBetween(
-        currentLocation!.latitude,
-        currentLocation!.longitude,
-        location['coordinates'].latitude,
-        location['coordinates'].longitude,
-      );
+  // Verificar proximidad para ubicaciones de la ruta
+  for (var location in routeLocations) {
+    double distance = Geolocator.distanceBetween(
+      currentLocation!.latitude,
+      currentLocation!.longitude,
+      location['coordinates'].latitude,
+      location['coordinates'].longitude,
+    );
 
-      if (minDistance == null || distance < minDistance) {
-        minDistance = distance;
-        nearest = location;
-      }
-
-      if (distance <= 20.0 && !visitedLocations.contains(location['name'])) {
-        _showProximityAlert(location);
-        setState(() {
-          visitedLocations.add(location['name']);
-        });
-        _saveVisitedLocations();
-        _checkIfRouteCompleted();
-        break;
-      }
+    if (minDistance == null || distance < minDistance) {
+      minDistance = distance;
+      nearest = location;
     }
 
-    if (nearest != _nearestLocation) {
+    if (distance <= 20.0 && !visitedLocations.contains(location['name'])) {
+      _showProximityAlert(location);
       setState(() {
-        _nearestLocation = nearest;
+        visitedLocations.add(location['name']);
       });
+      _saveVisitedLocations();
+      _checkIfRouteCompleted();
+      break;
     }
   }
+
+  // Verificar proximidad para todas las ubicaciones
+  for (var location in locations) {
+    double distance = Geolocator.distanceBetween(
+      currentLocation!.latitude,
+      currentLocation!.longitude,
+      location['coordinates'].latitude,
+      location['coordinates'].longitude,
+    );
+
+    if (minDistance == null || distance < minDistance) {
+      minDistance = distance;
+      nearest = location;
+    }
+
+    if (distance <= 20.0 && !visitedLocations.contains(location['name'])) {
+      _showProximityAlert(location);
+      setState(() {
+        visitedLocations.add(location['name']);
+      });
+      _saveVisitedLocations();
+      break; // Puedes eliminar este break si deseas mostrar múltiples alertas de proximidad
+    }
+  }
+
+  if (nearest != _nearestLocation) {
+    setState(() {
+      _nearestLocation = nearest;
+    });
+  }
+}
 
   void _checkIfRouteCompleted() {
     final routeLocationNames =
