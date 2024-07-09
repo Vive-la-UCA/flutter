@@ -4,6 +4,8 @@ import 'package:vive_la_uca/widgets/simple_text.dart';
 import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/services/route_service.dart';
 import 'package:vive_la_uca/services/location_service.dart';
+import 'package:vive_la_uca/services/badge_service.dart';
+import 'package:vive_la_uca/services/auth_service.dart';
 
 class LobbyPage extends StatefulWidget {
   const LobbyPage({super.key});
@@ -13,33 +15,63 @@ class LobbyPage extends StatefulWidget {
 }
 
 class _LobbyPageState extends State<LobbyPage> {
-  late Future<List<dynamic>> futureRoutes = Future.value([]);
-  late Future<List<dynamic>> futureLocations = Future.value([]);
-  bool _isLoading = true; // Estado adicional para controlar la carga
+  late Future<List<dynamic>> futureRoutes;
+  late Future<List<dynamic>> futureLocations;
+  List<String> _badgeIds = [];
+  String? _token;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadToken();
+    _loadTokenAndData();
   }
 
-  void _loadToken() async {
+  void _loadTokenAndData() async {
     final token = await TokenStorage.getToken();
     if (token != null) {
-      setState(() {
-        futureRoutes =
-            RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
-                .getRoutes(token);
-        futureLocations =
-            LocationService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
-                .getLocations(token);
-        print(futureLocations);
-        _isLoading = false; // Actualizar estado de carga
-      });
+      final authService = AuthService(
+          baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
+      try {
+        final userData = await authService.checkToken(token);
+        setState(() {
+          _token = token;
+          _badgeIds = List<String>.from(userData['badges'] ?? []);
+          futureRoutes =
+              RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
+                  .getRoutes(token);
+          futureLocations = LocationService(
+                  baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
+              .getLocations(token);
+          _isLoading = false;
+        });
+      } catch (e) {
+        print('Failed to fetch user data: $e');
+        setState(() {
+          _isLoading = false;
+        });
+      }
     } else {
       setState(() {
-        _isLoading = false; // Actualizar estado de carga, manejo del error
+        _isLoading = false;
       });
+    }
+  }
+
+  Future<bool> _hasBadgeForRoute(String routeId) async {
+    final badgeService =
+        BadgeService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
+    try {
+      if (_token != null) {
+        final badge = await badgeService.getBadgeByRouteId(_token!, routeId);
+        if (badge != null) {
+          return _badgeIds.contains(badge['uid']);
+        }
+      }
+      return false;
+    } catch (e) {
+      print('Failed to fetch badge for route: $e');
+      return false;
     }
   }
 
@@ -89,28 +121,47 @@ class _LobbyPageState extends State<LobbyPage> {
                           return Text('Error: ${snapshot.error}');
                         } else if (snapshot.hasData) {
                           return Container(
-                            height:
-                                270, // Ajusta la altura según el contenido de la tarjeta
+                            height: 270,
                             child: ListView.separated(
                               scrollDirection: Axis.horizontal,
                               itemCount: snapshot.data!.length,
                               itemBuilder: (context, index) {
                                 var route = snapshot.data![index];
-                                return RouteCard(
-                                  imagePath:
-                                      'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                                          route[
-                                              'image'], // Asegura que la URL es correcta
-                                  title: route['name'],
-                                  description: route['description'],
-                                  distance: '',
-                                  redirect: '/route/${route['uid']}',
-                                  uid: route['uid'],
+                                return FutureBuilder<bool>(
+                                  future: _hasBadgeForRoute(route['uid']),
+                                  builder: (context, badgeSnapshot) {
+                                    if (badgeSnapshot.connectionState ==
+                                            ConnectionState.done &&
+                                        !badgeSnapshot.hasError) {
+                                      return RouteCard(
+                                        imagePath:
+                                            'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                                                route['image'],
+                                        title: route['name'],
+                                        description: route['description'],
+                                        distance: '',
+                                        redirect: '/route/${route['uid']}',
+                                        uid: route['uid'],
+                                        hasBadge: badgeSnapshot.data!,
+                                      );
+                                    } else {
+                                      return RouteCard(
+                                        imagePath:
+                                            'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                                                route['image'],
+                                        title: route['name'],
+                                        description: route['description'],
+                                        distance: '',
+                                        redirect: '/route/${route['uid']}',
+                                        uid: route['uid'],
+                                        hasBadge: false,
+                                      );
+                                    }
+                                  },
                                 );
                               },
                               separatorBuilder: (context, index) =>
-                                  const SizedBox(
-                                      width: 10), // Adjust gap between cards
+                                  const SizedBox(width: 10),
                             ),
                           );
                         } else {
@@ -139,8 +190,7 @@ class _LobbyPageState extends State<LobbyPage> {
                           return Text('Error: ${snapshot.error}');
                         } else if (snapshot.hasData) {
                           return Container(
-                            height:
-                                270, // Ajusta la altura según el contenido de la tarjeta
+                            height: 270,
                             child: ListView.separated(
                               scrollDirection: Axis.horizontal,
                               itemCount: snapshot.data!.length,
@@ -149,8 +199,7 @@ class _LobbyPageState extends State<LobbyPage> {
                                 return RouteCard(
                                   imagePath:
                                       'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                                          location[
-                                              'image'], // Asegura que la URL es correcta
+                                          location['image'],
                                   title: location['name'],
                                   description: location['description'],
                                   distance: '',
@@ -159,12 +208,11 @@ class _LobbyPageState extends State<LobbyPage> {
                                 );
                               },
                               separatorBuilder: (context, index) =>
-                                  const SizedBox(
-                                      width: 10), // Adjust gap between cards
+                                  const SizedBox(width: 10),
                             ),
                           );
                         } else {
-                          return const Text('No hay rutas disponibles');
+                          return const Text('No hay lugares disponibles');
                         }
                       },
                     ),

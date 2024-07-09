@@ -315,6 +315,7 @@ class _RouteInfoState extends State<RouteInfo> {
                       'title': location['name'] as String,
                       'imageUrl':
                           'https://vivelauca.uca.edu.sv/admin-back/uploads/${location['image'] as String}',
+                      'description': location['description'] as String
                     })
                 .toList(),
           ),

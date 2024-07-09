@@ -62,9 +62,9 @@ class PlaceCardList extends StatelessWidget {
                 return Align(
                   alignment: Alignment.center,
                   child: PlaceCard(
-                    title: place['title']!,
-                    imageUrl: place['imageUrl']!,
-                  ),
+                      title: place['title']!,
+                      imageUrl: place['imageUrl']!,
+                      description: place['description']!),
                 );
               }).toList(),
             ),
