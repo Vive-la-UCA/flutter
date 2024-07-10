@@ -56,7 +56,7 @@ class BadgeService {
       final data = jsonDecode(response.body);
       return data['badge']; // Devuelve directamente la lista de rutas
     } else {
-      throw Exception('Failed to load routes');
+      throw Exception('Failed to load badge from route');
     }
   }
 }

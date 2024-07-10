@@ -7,22 +7,31 @@ class UserService {
   UserService({required this.baseUrl});
 
   // Add badge to user
-  Future<Map<String, dynamic>> addBadgeToUser(String tokenKey, String badgeId) async {
-    final url = Uri.parse('$baseUrl/api/users/add-badge/$badgeId');
-    final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $tokenKey',
-      },
-    );
+  Future<void> addBadgeToUser(String token, String userId, String badgeId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/users/add-badge/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'badge': badgeId,
+        }),
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['badge'];
-    } else {
-      final errorData = jsonDecode(response.body);
-      throw Exception('Failed to add badge: ${errorData['message']}');
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        print('Badge added successfully');
+      } else {
+        print('Failed to add badge: ${response.body}');
+        throw Exception('Failed to add badge: ${response.body}');
+      }
+    } catch (e) {
+      print('Exception caught: $e');
+      throw Exception('Failed to add badge due to an exception: $e');
     }
   }
 }
