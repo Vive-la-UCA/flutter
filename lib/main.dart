@@ -76,9 +76,8 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/route/:uid',
       builder: (context, state) {
-        final String uid = state
-            .params['uid']!; // Recuperar el UID de los parámetros de la ruta
-        return RouteInfo(uid: uid); // Pasar el UID al constructor de RouteInfo
+        final String uid = state.params['uid']!;
+        return RouteInfo(uid: uid);
       },
     ),
     GoRoute(

@@ -7,6 +7,7 @@ import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/services/badge_service.dart';
 import 'package:vive_la_uca/widgets/logout_button.dart';
 import 'package:vive_la_uca/widgets/simple_text.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -37,16 +38,35 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (await _requestPermissions()) {
+      print('Permissions granted');
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
-    if (pickedFile != null) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('profileImageUrl', pickedFile.path);
-      setState(() {
-        _profileImageUrl = pickedFile.path;
-      });
+      if (pickedFile != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('profileImageUrl', pickedFile.path);
+        setState(() {
+          _profileImageUrl = pickedFile.path;
+        });
+      } else {
+        print('No image selected');
+      }
+    } else {
+      print('Permissions not granted');
     }
+  }
+
+  Future<bool> _requestPermissions() async {
+    final statuses = await [
+      Permission.storage,
+    ].request();
+
+    bool storageGranted = statuses[Permission.storage]?.isGranted ?? false;
+
+    print('Storage permission: $storageGranted');
+
+    return storageGranted;
   }
 
   void _loadToken() async {
@@ -131,35 +151,52 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 30),
             Stack(
               children: [
-                Container(
-                  width: 130,
-                  height: 130,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Theme.of(context).primaryColor, // Color del borde
-                      width: 5.0, // Ancho del borde
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: Container(
+                    width: 130,
+                    height: 130,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color:
+                            Theme.of(context).primaryColor, // Color del borde
+                        width: 5.0, // Ancho del borde
+                      ),
                     ),
-                  ),
-                  child: CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.white,
-                    backgroundImage: _profileImageUrl != null
-                        ? _profileImageUrl!.startsWith('http')
-                            ? NetworkImage(_profileImageUrl!)
-                            : FileImage(File(_profileImageUrl!))
-                                as ImageProvider
-                        : const NetworkImage(
-                            'https://i0.wp.com/digitalhealthskills.com/wp-content/uploads/2022/11/3da39-no-user-image-icon-27.png?fit=500%2C500&ssl=1',
-                          ),
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.white,
+                      backgroundImage: _profileImageUrl != null
+                          ? _profileImageUrl!.startsWith('http')
+                              ? NetworkImage(_profileImageUrl!)
+                              : FileImage(File(_profileImageUrl!))
+                                  as ImageProvider
+                          : const NetworkImage(
+                              'https://i0.wp.com/digitalhealthskills.com/wp-content/uploads/2022/11/3da39-no-user-image-icon-27.png?fit=500%2C500&ssl=1',
+                            ),
+                    ),
                   ),
                 ),
                 Positioned(
                   bottom: 0,
                   right: 0,
-                  child: IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.blue),
-                    onPressed: _pickImage,
+                  child: GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.edit,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
