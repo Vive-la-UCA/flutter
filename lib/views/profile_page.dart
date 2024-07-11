@@ -8,6 +8,8 @@ import 'package:vive_la_uca/services/badge_service.dart';
 import 'package:vive_la_uca/widgets/logout_button.dart';
 import 'package:vive_la_uca/widgets/simple_text.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:vive_la_uca/widgets/badge_detail_sheet.dart';
+import 'package:vive_la_uca/services/route_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -126,6 +128,38 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  void _showBadgeDetailSheet(
+      BuildContext context, Map<String, dynamic> badge) async {
+    final imageUrl = badge['image'] ?? '';
+    final badgeName = badge['name'] ?? 'Unnamed Badge';
+    final routeId = badge['route']['_id'] ?? '';
+
+    final token = await TokenStorage.getToken();
+    final routeService =
+        RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
+    try {
+      final routeData = await routeService.getOneRoute(token!, routeId);
+      final routeName = routeData['name'] ?? 'unknown';
+      final routeImage = routeData['image'] ?? '';
+
+      showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return BadgeDetailSheet(
+            imageUrl:
+                'https://vivelauca.uca.edu.sv/admin-back/uploads/' + imageUrl,
+            badgeName: badgeName,
+            routeName: routeName,
+            routeImageUrl:
+                'https://vivelauca.uca.edu.sv/admin-back/uploads/' + routeImage,
+          );
+        },
+      );
+    } catch (e) {
+      _showErrorDialog('Failed to fetch route data: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -237,43 +271,47 @@ class _ProfilePageState extends State<ProfilePage> {
                       itemCount: _badges.length,
                       itemBuilder: (context, index) {
                         final badge = _badges[index];
-                        return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(15),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 5,
-                                offset: Offset(2, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                                      badge['image'],
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
+                        return GestureDetector(
+                          onTap: () => _showBadgeDetailSheet(context, badge),
+                          child: Container(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 8.0),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(15),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 5,
+                                  offset: Offset(2, 2),
                                 ),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                badge['name'] ?? 'Unnamed Badge',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.orange,
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                                        badge['image'],
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 10),
+                                Text(
+                                  badge['name'] ?? 'Unnamed Badge',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.orange,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       },
