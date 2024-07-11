@@ -1,9 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vive_la_uca/services/auth_service.dart';
 import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/services/badge_service.dart';
 import 'package:vive_la_uca/widgets/logout_button.dart';
 import 'package:vive_la_uca/widgets/simple_text.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -16,11 +20,53 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _userName; // To hold the user's name
   List<String> _badgeIds = []; // To hold badge IDs
   List<Map<String, dynamic>> _badges = []; // To hold detailed badge data
+  String? _profileImageUrl;
 
   @override
   void initState() {
     super.initState();
+    _loadProfileImage();
     _loadToken();
+  }
+
+  Future<void> _loadProfileImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _profileImageUrl = prefs.getString('profileImageUrl') ??
+          'https://i0.wp.com/digitalhealthskills.com/wp-content/uploads/2022/11/3da39-no-user-image-icon-27.png?fit=500%2C500&ssl=1';
+    });
+  }
+
+  Future<void> _pickImage() async {
+    if (await _requestPermissions()) {
+      print('Permissions granted');
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+      if (pickedFile != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('profileImageUrl', pickedFile.path);
+        setState(() {
+          _profileImageUrl = pickedFile.path;
+        });
+      } else {
+        print('No image selected');
+      }
+    } else {
+      print('Permissions not granted');
+    }
+  }
+
+  Future<bool> _requestPermissions() async {
+    final statuses = await [
+      Permission.storage,
+    ].request();
+
+    bool storageGranted = statuses[Permission.storage]?.isGranted ?? false;
+
+    print('Storage permission: $storageGranted');
+
+    return storageGranted;
   }
 
   void _loadToken() async {
@@ -84,11 +130,16 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: SimpleText(
-          text: 'Vive la UCA',
-          color: Theme.of(context).primaryColor,
-          fontSize: 20,
-          fontFamily: 'MontserratBold',
+        title: Column(
+          children: [
+            const SizedBox(height: 30),
+            SimpleText(
+              text: 'Vive la UCA',
+              color: Theme.of(context).primaryColor,
+              fontSize: 25,
+              fontFamily: 'MontserratBold',
+            ),
+          ],
         ),
         backgroundColor: Colors.white,
       ),
@@ -98,11 +149,57 @@ class _ProfilePageState extends State<ProfilePage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 30),
-            const CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.white,
-              backgroundImage: NetworkImage(
-                  'https://cdn-icons-png.freepik.com/512/1144/1144760.png'),
+            Stack(
+              children: [
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: Container(
+                    width: 130,
+                    height: 130,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color:
+                            Theme.of(context).primaryColor, // Color del borde
+                        width: 5.0, // Ancho del borde
+                      ),
+                    ),
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.white,
+                      backgroundImage: _profileImageUrl != null
+                          ? _profileImageUrl!.startsWith('http')
+                              ? NetworkImage(_profileImageUrl!)
+                              : FileImage(File(_profileImageUrl!))
+                                  as ImageProvider
+                          : const NetworkImage(
+                              'https://i0.wp.com/digitalhealthskills.com/wp-content/uploads/2022/11/3da39-no-user-image-icon-27.png?fit=500%2C500&ssl=1',
+                            ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.edit,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 15),
             Text(
@@ -128,20 +225,53 @@ class _ProfilePageState extends State<ProfilePage> {
             Expanded(
               child: _badges.isEmpty
                   ? const Center(child: CircularProgressIndicator())
-                  : ListView.builder(
+                  : GridView.builder(
+                      padding: const EdgeInsets.only(top: 20),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 1,
+                      ),
                       itemCount: _badges.length,
                       itemBuilder: (context, index) {
                         final badge = _badges[index];
-                        return Card(
-                          color: Colors.white,
-                          child: ListTile(
-                            leading: Image.network(
-                              'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                                  badge['image'],
-                              width: 50,
-                              height: 50,
-                            ),
-                            title: Text(badge['name'] ?? 'Unnamed Badge'),
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(15),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 5,
+                                offset: Offset(2, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                                      badge['image'],
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              SizedBox(height: 10),
+                              Text(
+                                badge['name'] ?? 'Unnamed Badge',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       },

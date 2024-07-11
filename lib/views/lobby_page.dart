@@ -84,7 +84,7 @@ class _LobbyPageState extends State<LobbyPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 10),
+              const SizedBox(height: 30),
               SimpleText(
                   text: 'Vive la UCA',
                   color: Theme.of(context).primaryColor,
@@ -97,7 +97,7 @@ class _LobbyPageState extends State<LobbyPage> {
                       'Sé búho: recorré nuestro campus, conocé de primera mano tu futura carrera universitaria.',
                   color: Colors.black,
                   fontFamily: 'Montserrat',
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.w500,
                   textAlign: TextAlign.justify),
               const SizedBox(height: 15),

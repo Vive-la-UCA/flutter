@@ -97,8 +97,8 @@ class RouteCard extends StatelessWidget {
                   child: Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.grey
-                          .withOpacity(0.8), // Color de fondo del círculo
+                      color: const Color(0xFFD9D9D9)
+                          .withOpacity(0.71), // Color de fondo del círculo
                     ),
                     padding:
                         const EdgeInsets.all(5.0), // Padding dentro del círculo
@@ -107,7 +107,7 @@ class RouteCard extends StatelessWidget {
                       width: 25,
                       height: 25,
                       colorFilter: ColorFilter.mode(
-                        hasBadge! ? Colors.orange : Colors.grey,
+                        hasBadge! ? Colors.orange : Color(0xFF515151),
                         BlendMode.srcIn,
                       ),
                     ),
