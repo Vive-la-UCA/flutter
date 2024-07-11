@@ -225,20 +225,53 @@ class _ProfilePageState extends State<ProfilePage> {
             Expanded(
               child: _badges.isEmpty
                   ? const Center(child: CircularProgressIndicator())
-                  : ListView.builder(
+                  : GridView.builder(
+                      padding: const EdgeInsets.only(top: 20),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 1,
+                      ),
                       itemCount: _badges.length,
                       itemBuilder: (context, index) {
                         final badge = _badges[index];
-                        return Card(
-                          color: Colors.white,
-                          child: ListTile(
-                            leading: Image.network(
-                              'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                                  badge['image'],
-                              width: 50,
-                              height: 50,
-                            ),
-                            title: Text(badge['name'] ?? 'Unnamed Badge'),
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(15),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 5,
+                                offset: Offset(2, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                                      badge['image'],
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              SizedBox(height: 10),
+                              Text(
+                                badge['name'] ?? 'Unnamed Badge',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       },
