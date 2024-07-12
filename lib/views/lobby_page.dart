@@ -21,6 +21,7 @@ class _LobbyPageState extends State<LobbyPage> {
   List<String> _badgeIds = [];
   String? _token;
   bool _isLoading = true;
+  Map<String, bool> _badgeStatus = {};
 
   @override
   void initState() {
@@ -35,15 +36,27 @@ class _LobbyPageState extends State<LobbyPage> {
           baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
       try {
         final userData = await authService.checkToken(token);
+        _token = token;
+        _badgeIds = List<String>.from(userData['badges'] ?? []);
+        futureRoutes =
+            RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
+                .getAllRoutes(token);
+        futureLocations =
+            LocationService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
+                .getAllLocations(token);
+
+        final routes = await futureRoutes;
+        final badgeService =
+            BadgeService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
+
+        for (var route in routes) {
+          final badge =
+              await badgeService.getBadgeByRouteId(_token!, route['uid']);
+          _badgeStatus[route['uid']] =
+              badge != null && _badgeIds.contains(badge['uid']);
+        }
+
         setState(() {
-          _token = token;
-          _badgeIds = List<String>.from(userData['badges'] ?? []);
-          futureRoutes =
-              RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
-                  .getAllRoutes(token);
-          futureLocations = LocationService(
-                  baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
-              .getAllLocations(token);
           _isLoading = false;
         });
       } catch (e) {
@@ -56,23 +69,6 @@ class _LobbyPageState extends State<LobbyPage> {
       setState(() {
         _isLoading = false;
       });
-    }
-  }
-
-  Future<bool> _hasBadgeForRoute(String routeId) async {
-    final badgeService =
-        BadgeService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
-    try {
-      if (_token != null) {
-        final badge = await badgeService.getBadgeByRouteId(_token!, routeId);
-        if (badge != null) {
-          return _badgeIds.contains(badge['uid']);
-        }
-      }
-      return false;
-    } catch (e) {
-      print('Failed to fetch badge for route: $e');
-      return false;
     }
   }
 
@@ -128,37 +124,16 @@ class _LobbyPageState extends State<LobbyPage> {
                               itemCount: snapshot.data!.length,
                               itemBuilder: (context, index) {
                                 var route = snapshot.data![index];
-                                return FutureBuilder<bool>(
-                                  future: _hasBadgeForRoute(route['uid']),
-                                  builder: (context, badgeSnapshot) {
-                                    if (badgeSnapshot.connectionState ==
-                                            ConnectionState.done &&
-                                        !badgeSnapshot.hasError) {
-                                      return RouteCard(
-                                        imagePath:
-                                            'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                                                route['image'],
-                                        title: route['name'],
-                                        description: route['description'],
-                                        distance: '',
-                                        redirect: '/route/${route['uid']}',
-                                        uid: route['uid'],
-                                        hasBadge: badgeSnapshot.data!,
-                                      );
-                                    } else {
-                                      return RouteCard(
-                                        imagePath:
-                                            'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                                                route['image'],
-                                        title: route['name'],
-                                        description: route['description'],
-                                        distance: '',
-                                        redirect: '/route/${route['uid']}',
-                                        uid: route['uid'],
-                                        hasBadge: false,
-                                      );
-                                    }
-                                  },
+                                return RouteCard(
+                                  imagePath:
+                                      'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                                          route['image'],
+                                  title: route['name'],
+                                  description: route['description'],
+                                  distance: '',
+                                  redirect: '/route/${route['uid']}',
+                                  uid: route['uid'],
+                                  hasBadge: _badgeStatus[route['uid']],
                                 );
                               },
                               separatorBuilder: (context, index) =>
