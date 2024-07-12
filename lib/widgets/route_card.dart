@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class RouteCard extends StatelessWidget {
   final String imagePath;
@@ -49,8 +50,13 @@ class RouteCard extends StatelessWidget {
                     height: 150,
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    placeholder: (context, url) =>
-                        const Center(child: CircularProgressIndicator()),
+                    placeholder: (context, url) => Skeletonizer(
+                      child: Container(
+                        height: 150,
+                        width: double.infinity,
+                        color: Colors.grey[300],
+                      ),
+                    ),
                     errorWidget: (context, url, error) =>
                         const Icon(Icons.error),
                   ),
