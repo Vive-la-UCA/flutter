@@ -17,24 +17,21 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print('Handling a background message: ${message.messageId}');
 }
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  loadToken();
+  await loadToken();
   await FMTCObjectBoxBackend().initialise();
   await const FMTCStore('mapStore').manage.create();
   runApp(const MyApp());
 }
 
 bool isLoggedIn = false;
-void loadToken() async {
+
+Future<void> loadToken() async {
   final token = await TokenStorage.getToken();
-  if (token != null) {
-    isLoggedIn = true;
-  } else {
-    isLoggedIn = false;
-  }
+  isLoggedIn = token != null;
 }
 
 class MyApp extends StatelessWidget {

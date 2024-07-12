@@ -6,6 +6,7 @@ import 'package:vive_la_uca/services/route_service.dart';
 import 'package:vive_la_uca/services/location_service.dart';
 import 'package:vive_la_uca/services/badge_service.dart';
 import 'package:vive_la_uca/services/auth_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class LobbyPage extends StatefulWidget {
   const LobbyPage({super.key});
