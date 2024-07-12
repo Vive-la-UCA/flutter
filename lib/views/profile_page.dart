@@ -10,6 +10,7 @@ import 'package:vive_la_uca/widgets/simple_text.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:vive_la_uca/widgets/badge_detail_sheet.dart';
 import 'package:vive_la_uca/services/route_service.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -23,6 +24,7 @@ class _ProfilePageState extends State<ProfilePage> {
   List<String> _badgeIds = []; // To hold badge IDs
   List<Map<String, dynamic>> _badges = []; // To hold detailed badge data
   String? _profileImageUrl;
+  bool _isLoading = true; // Indicator for loading badges
 
   @override
   void initState() {
@@ -104,9 +106,13 @@ class _ProfilePageState extends State<ProfilePage> {
       );
       setState(() {
         _badges = badges.toList();
+        _isLoading = false; // Set loading to false when done
       });
     } catch (e) {
       _showErrorDialog('Failed to fetch badges: $e');
+      setState(() {
+        _isLoading = false; // Set loading to false even on error
+      });
     }
   }
 
@@ -257,65 +263,93 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const SizedBox(height: 20),
             Expanded(
-              child: _badges.isEmpty
+              child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : GridView.builder(
-                      padding: const EdgeInsets.only(top: 20),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        mainAxisSpacing: 10,
-                        crossAxisSpacing: 10,
-                        childAspectRatio: 1,
-                      ),
-                      itemCount: _badges.length,
-                      itemBuilder: (context, index) {
-                        final badge = _badges[index];
-                        return GestureDetector(
-                          onTap: () => _showBadgeDetailSheet(context, badge),
-                          child: Container(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(15),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 5,
-                                  offset: Offset(2, 2),
+                  : _badges.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SvgPicture.asset(
+                                'lib/assets/images/has_badge.svg',
+                                width: 50,
+                                height: 50,
+                                colorFilter: const ColorFilter.mode(
+                                  Color(0xFFB9C0C9), // Gris
+                                  BlendMode.srcIn,
                                 ),
-                              ],
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                                        badge['image'],
-                                    width: 50,
-                                    height: 50,
-                                    fit: BoxFit.cover,
-                                  ),
+                              ),
+                              const SizedBox(height: 10),
+                              const Text(
+                                'Consigue insignias completando las rutas',
+                                textAlign: TextAlign.center, // Centrar el texto
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
                                 ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  badge['name'] ?? 'Unnamed Badge',
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.orange,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                    ),
+                        )
+                      : GridView.builder(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.only(top: 20),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 10,
+                            childAspectRatio: 0.7,
+                          ),
+                          itemCount: _badges.length,
+                          itemBuilder: (context, index) {
+                            final badge = _badges[index];
+                            return GestureDetector(
+                              onTap: () => _showBadgeDetailSheet(context, badge),
+                              child: Container(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(15),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 5,
+                                      offset: Offset(2, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(
+                                        'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                                            badge['image'],
+                                        width: 50,
+                                        height: 50,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      badge['name'] ?? 'Unnamed Badge',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.orange,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
             ),
             const SizedBox(height: 15),
             const LogoutButton(),

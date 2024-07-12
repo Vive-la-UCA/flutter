@@ -58,6 +58,8 @@ class _MapPageState extends State<MapPage> {
   String? _token; // Para almacenar el token del usuario
   String? _userId; // Para almacenar el ID del usuario
   String? _badgeId; // Para almacenar el ID del badge
+  String? _badgeName; // Para almacenar el nombre de la badge
+  String? _badgeImageUrl; // Para almacenar la URL de la imagen de la badge
 
   List<LatLng> routeCoordinates = [];
   List<Map<String, dynamic>> routeLocations = [];
@@ -128,7 +130,6 @@ class _MapPageState extends State<MapPage> {
   void _loadToken() async {
     final token = await TokenStorage.getToken();
     if (token != null) {
-      print('token: $token');
       final authService = AuthService(
           baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
       try {
@@ -137,26 +138,25 @@ class _MapPageState extends State<MapPage> {
           _token = token;
           _userId = userData[
               'uid']; // Asumiendo que el ID del usuario está en el campo 'id'
-          print('User ID: $_userId');
         });
       } catch (e) {
-        print('Failed to get user ID: $e');
+        print('Failed to get user data: $e');
       }
 
       if (_routeId != null) {
-        print('Getting badge ID for route $_routeId');
-        final badgeService =
-            BadgeService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
-        try {
-          final badge = await badgeService.getBadgeByRouteId(token, _routeId!);
-          setState(() {
-            _badgeId = badge[
-                'uid']; // Asumiendo que el ID del badge está en el campo 'id'
-            print('Badge ID: $_badgeId');
-          });
-        } catch (e) {
-          print('Failed to get badge ID: $e');
-        }
+        // En el método _loadToken(), después de obtener los datos de la badge:
+final badgeService = BadgeService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
+try {
+  final badge = await badgeService.getBadgeByRouteId(token, _routeId!);
+  setState(() {
+    _badgeId = badge['uid'];
+    _badgeName = badge['name'];
+    _badgeImageUrl = 'https://vivelauca.uca.edu.sv/admin-back/uploads/' + badge['image']; // Formar la URL completa
+  });
+} catch (e) {
+  print('Failed to get badge ID: $e');
+}
+
       }
 
       final routeService =
@@ -188,7 +188,7 @@ class _MapPageState extends State<MapPage> {
           });
 
           // Verificar si todas las localidades de la ruta ya han sido visitadas
-          _checkIfRouteCompleted();
+          _checkIfRouteCompleted(initialCheck: true);
         }
       }
 
@@ -372,43 +372,96 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  void _checkIfRouteCompleted() {
+  void _checkIfRouteCompleted({bool initialCheck = false}) {
     final routeLocationNames =
         routeLocations.map((location) => location['name']).toSet();
     if (visitedLocations.containsAll(routeLocationNames)) {
-      showCustomDialogRoute();
+      if (initialCheck) {
+        _showRouteCompletedDialog();
+      } else {
+        showCustomDialogRoute();
+      }
     }
   }
 
+  // Dentro de la clase _MapPageState
+void _navigateToHome() {
+  context.go('/home');
+}
+
   Future<void> showCustomDialogRoute() async {
-    // Mostrar el dialogo
+  print('BadgeName: $_badgeName');
+  print('BadgeImageUrl: _badgeImageUrl');
+  print('RouteName: ${widget.routeName}');
+  print('RouteImage: ${widget.routeImage}');
+  
+  // Mostrar el dialogo
+  if (_badgeName != null && _badgeImageUrl != null && widget.routeName != null && widget.routeImage != null) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return CustomDialogRoute(locationName: "última ubicación");
+        return CustomDialogRoute(
+          locationName: "última ubicación",
+          badgeName: _badgeName!,
+          badgeImageUrl: _badgeImageUrl!,
+          routeName: widget.routeName!,
+          routeImage: widget.routeImage!,
+          onConfirm: _navigateToHome, // Pasa la función de navegación
+        );
       },
     );
-
-    print('Verificando Badge ID: $_badgeId');
-    print('Verificando User ID: $_userId');
-    print('Verificando Token: $_token');
     // Agregar la badge al usuario
     if (_token != null && _userId != null && _badgeId != null) {
       print('Pase hasta aqui');
-      final userService =
-          UserService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
+      final userService = UserService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
       try {
-        print('Verificando2 Badge ID : $_badgeId');
-        print('Verificando 2User ID: $_userId');
-        print('Verificando T2oken: $_token');
-        await userService.addBadgeToUser(
-            _token!, _userId!, _badgeId!); // Usar el userId y badgeId obtenidos
-        print('Badge added successfully');
+        await userService.addBadgeToUser(_token!, _userId!, _badgeId!); // Usar el userId y badgeId obtenidos
       } catch (e) {
-        print('Failed to add badge: $e');
+        print('Failed to add badge to user: $e');
       }
     }
-    
+  } else {
+    print('Error: BadgeName, BadgeImageUrl, RouteName, or RouteImage is null');
+  }
+}
+
+  void _showRouteCompletedDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Ruta completada'),
+          content: const Text(
+              'Ya has finalizado la ruta, ¿deseas volver a hacerla?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('No'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.go('/home');
+              },
+            ),
+            TextButton(
+              child: const Text('Sí'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  _clearRouteVisitedLocations();
+                  _saveVisitedLocations();
+                });
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _clearRouteVisitedLocations() {
+    final routeLocationNames =
+        routeLocations.map((location) => location['name']).toSet();
+    visitedLocations
+        .removeWhere((location) => routeLocationNames.contains(location));
   }
 
   void _showProximityAlert(Map<String, dynamic> location) {
