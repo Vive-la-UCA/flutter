@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/services/location_service.dart';
 import 'package:vive_la_uca/services/token_service.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:vive_la_uca/views/no_connection.dart'; // Importa la pantalla de error
 
 class LocationInfo extends StatefulWidget {
   final String uid;
@@ -13,11 +17,30 @@ class LocationInfo extends StatefulWidget {
 class _LocationInfoState extends State<LocationInfo> {
   bool _isLoading = true;
   Map<String, dynamic>? _routeData;
+  bool _hasConnection = true;
+  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
 
   @override
   void initState() {
     super.initState();
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen(_updateConnectionStatus);
     _loadLocationInfo();
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
+  }
+
+  void _updateConnectionStatus(ConnectivityResult result) {
+    setState(() {
+      _hasConnection = result != ConnectivityResult.none;
+      if (_hasConnection) {
+        _loadLocationInfo();
+      }
+    });
   }
 
   void _loadLocationInfo() async {
@@ -33,11 +56,19 @@ class _LocationInfoState extends State<LocationInfo> {
       setState(() {
         _isLoading = false;
       });
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_hasConnection) {
+      return NoConnectionScreen(onRetry: _loadLocationInfo);
+    }
+
     return Scaffold(
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

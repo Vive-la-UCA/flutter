@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -5,11 +7,11 @@ import 'package:vive_la_uca/services/route_service.dart';
 import 'package:vive_la_uca/services/token_service.dart';
 import 'package:vive_la_uca/views/map_page.dart';
 import 'package:vive_la_uca/widgets/place_card_list.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:vive_la_uca/views/no_connection.dart'; // Importa la pantalla de error
 
 // Función para calcular la distancia entre dos puntos LatLng
 double calculateDistance(LatLng start, LatLng end) {
@@ -45,10 +47,20 @@ class _RouteInfoState extends State<RouteInfo> {
   // Variables que calculan la distancia y el tiempo de la ruta
   double? _distanceToLastLocation;
   double? _timeToLastLocation;
+  bool _hasConnection = true;
+  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   void initState() {
     super.initState();
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen(_updateConnectionStatus);
     _initialize();
   }
 
@@ -57,6 +69,15 @@ class _RouteInfoState extends State<RouteInfo> {
       _determinePosition(),
       _loadRouteInfo(),
     ]);
+  }
+
+  void _updateConnectionStatus(ConnectivityResult result) {
+    setState(() {
+      _hasConnection = result != ConnectivityResult.none;
+      if (_hasConnection) {
+        _loadRouteInfo();
+      }
+    });
   }
 
   Future<LatLng?> _determinePosition() async {
@@ -108,9 +129,17 @@ class _RouteInfoState extends State<RouteInfo> {
       } catch (e) {
         print('Error loading route data: $e');
       }
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -130,6 +159,10 @@ class _RouteInfoState extends State<RouteInfo> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_hasConnection) {
+      return NoConnectionScreen(onRetry: _loadRouteInfo);
+    }
+
     return Scaffold(
       body: _isLoading
           ? Skeletonizer(child: _buildRouteSkeleton())
