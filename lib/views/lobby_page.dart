@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/widgets/route_card.dart';
 import 'package:vive_la_uca/widgets/simple_text.dart';
@@ -8,6 +10,7 @@ import 'package:vive_la_uca/services/badge_service.dart';
 import 'package:vive_la_uca/services/auth_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:vive_la_uca/views/no_connection.dart'; // Importa la pantalla de error
 
 class LobbyPage extends StatefulWidget {
   const LobbyPage({super.key});
@@ -22,15 +25,51 @@ class _LobbyPageState extends State<LobbyPage> {
   List<String> _badgeIds = [];
   String? _token;
   bool _isLoading = true;
+  bool _hasConnection = true;
+  bool _hasLoadedData = false; // Nueva variable
   Map<String, bool> _badgeStatus = {};
+  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
 
   @override
   void initState() {
     super.initState();
-    _loadTokenAndData();
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen(_updateConnectionStatus);
+    _checkConnectionAndLoadData();
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
+  }
+
+  void _updateConnectionStatus(ConnectivityResult result) {
+    setState(() {
+      _hasConnection = result != ConnectivityResult.none;
+      if (_hasConnection && !_hasLoadedData) {
+        _loadTokenAndData();
+      }
+    });
+  }
+
+  void _checkConnectionAndLoadData() async {
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    _hasConnection = connectivityResult != ConnectivityResult.none;
+    if (_hasConnection) {
+      _loadTokenAndData();
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _loadTokenAndData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     final token = await TokenStorage.getToken();
     if (token != null) {
       final authService = AuthService(
@@ -66,6 +105,7 @@ class _LobbyPageState extends State<LobbyPage> {
         if (mounted) {
           setState(() {
             _isLoading = false;
+            _hasLoadedData = true; // Datos cargados correctamente
           });
         }
       } catch (e) {
@@ -87,6 +127,9 @@ class _LobbyPageState extends State<LobbyPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_hasConnection && !_hasLoadedData) {
+      return NoConnectionScreen(onRetry: _checkConnectionAndLoadData);
+    }
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
