@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_print
-
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -10,10 +8,14 @@ import 'package:vive_la_uca/widgets/place_card_list.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class RouteInfo extends StatefulWidget {
   final String uid;
-  RouteInfo({Key? key, required this.uid}) : super(key: key);
+  final bool? hasBadge;
+
+  RouteInfo({Key? key, required this.uid, this.hasBadge}) : super(key: key);
 
   @override
   State<RouteInfo> createState() => _RouteInfoState();
@@ -22,8 +24,6 @@ class RouteInfo extends StatefulWidget {
 class _RouteInfoState extends State<RouteInfo> {
   bool _isLoading = true;
   Map<String, dynamic>? _routeData;
-  final bool _hasBadge =
-      false; // * Cambiar esta variable dependiendo si tiene la badge o no el usuario
 
   // Variables que calculan la distancia y el tiempo de la ruta
   double? _distanceToLastLocation;
@@ -63,10 +63,8 @@ class _RouteInfoState extends State<RouteInfo> {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Verificar si los servicios de ubicación están habilitados
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // Los servicios de ubicación no están habilitados, no se puede proceder
       return null;
     }
 
@@ -74,7 +72,6 @@ class _RouteInfoState extends State<RouteInfo> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        // Los permisos de ubicación están denegados
         return null;
       }
     }
@@ -104,11 +101,11 @@ class _RouteInfoState extends State<RouteInfo> {
       var json = jsonDecode(response.body);
       var route = json['routes'][0];
       setState(() {
-        _distanceToLastLocation = route['distance']; // Convertir a kilómetros
+        _distanceToLastLocation =
+            route['distance'] / 1000; // Convertir a kilómetros
         _timeToLastLocation = route['duration'] / 60; // Convertir a minutos
       });
     } else {
-      // Manejo de error
       setState(() {
         _distanceToLastLocation = null;
         _timeToLastLocation = null;
@@ -120,8 +117,74 @@ class _RouteInfoState extends State<RouteInfo> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildRouteContent(),
+          ? Skeletonizer(child: _buildRouteSkeleton())
+          : AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _buildRouteContent(),
+            ),
+    );
+  }
+
+  Widget _buildRouteSkeleton() {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(20.0),
+              bottomRight: Radius.circular(20.0),
+            ),
+            child: Container(
+              width: double.infinity,
+              height: 350,
+              color: Colors.grey[300],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  height: 15,
+                  width: double.infinity,
+                  color: Colors.grey[300],
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  height: 15,
+                  width: double.infinity,
+                  color: Colors.grey[300],
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  height: 15,
+                  width: double.infinity,
+                  color: Colors.grey[300],
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  height: 30,
+                  width: 150,
+                  color: Colors.grey[300],
+                ),
+                const SizedBox(height: 20),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    height: 100,
+                    width: double.infinity,
+                    color: Colors.grey[300],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -133,6 +196,8 @@ class _RouteInfoState extends State<RouteInfo> {
         _routeData?['description'] ?? 'No hay descripción disponible.';
     final locations =
         List<Map<String, dynamic>>.from(_routeData?['locations'] ?? []);
+
+    final bool hasBadge = widget.hasBadge ?? false;
 
     return SingleChildScrollView(
       child: Column(
@@ -146,11 +211,20 @@ class _RouteInfoState extends State<RouteInfo> {
                   bottomLeft: Radius.circular(20.0),
                   bottomRight: Radius.circular(20.0),
                 ),
-                child: Image.network(
-                  imageUrl,
+                child: CachedNetworkImage(
+                  imageUrl: imageUrl,
                   width: double.infinity,
                   height: 350,
                   fit: BoxFit.cover,
+                  placeholder: (context, url) => Skeletonizer(
+                    child: Container(
+                      width: double.infinity,
+                      height: 350,
+                      color: Colors.grey[300],
+                    ),
+                  ),
+                  fadeInDuration: const Duration(milliseconds: 500),
+                  errorWidget: (context, url, error) => const Icon(Icons.error),
                 ),
               ),
               ClipRRect(
@@ -160,11 +234,21 @@ class _RouteInfoState extends State<RouteInfo> {
                 ),
                 child: Stack(
                   children: [
-                    Image.network(
-                      imageUrl,
+                    CachedNetworkImage(
+                      imageUrl: imageUrl,
                       width: double.infinity,
                       height: 400,
                       fit: BoxFit.cover,
+                      placeholder: (context, url) => Skeletonizer(
+                        child: Container(
+                          width: double.infinity,
+                          height: 400,
+                          color: Colors.grey[300],
+                        ),
+                      ),
+                      fadeInDuration: const Duration(milliseconds: 500),
+                      errorWidget: (context, url, error) =>
+                          const Icon(Icons.error),
                     ),
                     Container(
                       width: double.infinity,
@@ -186,21 +270,18 @@ class _RouteInfoState extends State<RouteInfo> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                const SizedBox(
-                                    width:
-                                        10), // Espacio entre el texto y el SVG
+                                const SizedBox(width: 10),
                                 SvgPicture.asset(
                                   'lib/assets/images/has_badge.svg',
                                   width: 25,
                                   height: 25,
                                   colorFilter: ColorFilter.mode(
-                                    _hasBadge
+                                    hasBadge
                                         ? Colors.orange
-                                        : const Color(
-                                            0xFFB9C0C9), // Condicional para el color
+                                        : const Color(0xFFB9C0C9),
                                     BlendMode.srcIn,
                                   ),
-                                )
+                                ),
                               ],
                             ),
                             const SizedBox(height: 5),
@@ -267,7 +348,7 @@ class _RouteInfoState extends State<RouteInfo> {
                                       ),
                                       const SizedBox(width: 10),
                                       Text(
-                                        '(${_distanceToLastLocation!.toStringAsFixed(1)} m)',
+                                        '(${_distanceToLastLocation!.toStringAsFixed(1)} km)',
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,

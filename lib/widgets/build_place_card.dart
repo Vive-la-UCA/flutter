@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'location_details_bottomsheet.dart';
 
 class PlaceCard extends StatelessWidget {
@@ -47,8 +49,21 @@ class PlaceCard extends StatelessWidget {
             ClipRRect(
               borderRadius:
                   const BorderRadius.horizontal(left: Radius.circular(8)),
-              child: Image.network(imageUrl,
-                  width: 80, height: 80, fit: BoxFit.cover),
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Skeletonizer(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    color: Colors.grey[300],
+                  ),
+                ),
+                fadeInDuration: const Duration(milliseconds: 500),
+                errorWidget: (context, url, error) => const Icon(Icons.error),
+              ),
             ),
             Expanded(
               child: Padding(

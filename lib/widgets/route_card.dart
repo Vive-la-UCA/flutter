@@ -26,9 +26,13 @@ class RouteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('desde route card $hasBadge');
     return InkWell(
       onTap: () {
-        GoRouter.of(context).push(redirect);
+        GoRouter.of(context).push(
+          redirect,
+          extra: {'uid': uid, 'hasBadge': hasBadge},
+        );
       },
       child: Container(
         color: Colors.white,

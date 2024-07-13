@@ -74,7 +74,10 @@ final GoRouter _router = GoRouter(
       path: '/route/:uid',
       builder: (context, state) {
         final String uid = state.params['uid']!;
-        return RouteInfo(uid: uid);
+        final Map<String, Object?> extra = state.extra as Map<String, Object?>;
+        final bool hasBadge = extra['hasBadge'] as bool? ?? false;
+
+        return RouteInfo(uid: uid, hasBadge: hasBadge);
       },
     ),
     GoRoute(
