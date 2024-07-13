@@ -11,6 +11,22 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+// Función para calcular la distancia entre dos puntos LatLng
+double calculateDistance(LatLng start, LatLng end) {
+  return Geolocator.distanceBetween(
+    start.latitude,
+    start.longitude,
+    end.latitude,
+    end.longitude,
+  );
+}
+
+// Función para calcular el tiempo basado en la distancia
+double calculateTime(double distance) {
+  const double averageSpeed = 5000 / 3600; // velocidad promedio en m/s
+  return distance / averageSpeed / 60; // tiempo en minutos
+}
+
 class RouteInfo extends StatefulWidget {
   final String uid;
   final bool? hasBadge;
@@ -24,6 +40,7 @@ class RouteInfo extends StatefulWidget {
 class _RouteInfoState extends State<RouteInfo> {
   bool _isLoading = true;
   Map<String, dynamic>? _routeData;
+  LatLng? currentLocation;
 
   // Variables que calculan la distancia y el tiempo de la ruta
   double? _distanceToLastLocation;
@@ -32,34 +49,17 @@ class _RouteInfoState extends State<RouteInfo> {
   @override
   void initState() {
     super.initState();
-    _loadRouteInfo();
+    _initialize();
   }
 
-  void _loadRouteInfo() async {
-    final token = await TokenStorage.getToken();
-    if (token != null) {
-      try {
-        final routeService =
-            RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
-        _routeData = await routeService.getOneRoute(token, widget.uid);
-        final currentLocation = await _getCurrentLocation();
-        if (currentLocation != null) {
-          final routeCoordinates = _routeData!['locations']
-              .map<LatLng>((location) =>
-                  LatLng(location['latitude'], location['longitude']))
-              .toList();
-          await _calculateDistanceAndTime(currentLocation, routeCoordinates);
-        }
-      } catch (e) {
-        print('Error loading route data: $e');
-      }
-      setState(() {
-        _isLoading = false;
-      });
-    }
+  Future<void> _initialize() async {
+    await Future.wait([
+      _determinePosition(),
+      _loadRouteInfo(),
+    ]);
   }
 
-  Future<LatLng?> _getCurrentLocation() async {
+  Future<LatLng?> _determinePosition() async {
     bool serviceEnabled;
     LocationPermission permission;
 
@@ -80,8 +80,38 @@ class _RouteInfoState extends State<RouteInfo> {
       return null;
     }
 
-    Position position = await Geolocator.getCurrentPosition();
-    return LatLng(position.latitude, position.longitude);
+    Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.bestForNavigation);
+
+    LatLng latLng = LatLng(position.latitude, position.longitude);
+    setState(() {
+      currentLocation = latLng;
+    });
+    return latLng;
+  }
+
+  Future<void> _loadRouteInfo() async {
+    final token = await TokenStorage.getToken();
+    if (token != null) {
+      try {
+        final routeService =
+            RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
+        _routeData = await routeService.getOneRoute(token, widget.uid);
+        if (currentLocation != null) {
+          final routeCoordinates = _routeData!['locations']
+              .map<LatLng>((location) => LatLng(
+                  double.parse(location['latitude'].toString()),
+                  double.parse(location['longitude'].toString())))
+              .toList();
+          await _calculateDistanceAndTime(currentLocation!, routeCoordinates);
+        }
+      } catch (e) {
+        print('Error loading route data: $e');
+      }
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _calculateDistanceAndTime(
@@ -89,28 +119,13 @@ class _RouteInfoState extends State<RouteInfo> {
     if (routeCoordinates.isEmpty) return;
 
     LatLng lastLocation = routeCoordinates.last;
-    String coordinates =
-        '${currentLocation.longitude},${currentLocation.latitude};${lastLocation.longitude},${lastLocation.latitude}';
+    double distance = calculateDistance(currentLocation, lastLocation);
+    double time = calculateTime(distance);
 
-    String url =
-        'https://dei.uca.edu.sv/routing/route/v1/foot/$coordinates?geometries=geojson';
-
-    var response = await http.get(Uri.parse(url));
-
-    if (response.statusCode == 200) {
-      var json = jsonDecode(response.body);
-      var route = json['routes'][0];
-      setState(() {
-        _distanceToLastLocation =
-            route['distance'] / 1000; // Convertir a kilómetros
-        _timeToLastLocation = route['duration'] / 60; // Convertir a minutos
-      });
-    } else {
-      setState(() {
-        _distanceToLastLocation = null;
-        _timeToLastLocation = null;
-      });
-    }
+    setState(() {
+      _distanceToLastLocation = distance;
+      _timeToLastLocation = time;
+    });
   }
 
   @override
@@ -339,7 +354,9 @@ class _RouteInfoState extends State<RouteInfo> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        '${_timeToLastLocation!.toStringAsFixed(0)} min',
+                                        _timeToLastLocation! >= 60
+                                            ? '${(_timeToLastLocation! / 60).floor()} h ${(_timeToLastLocation! % 60).round()} min'
+                                            : '${_timeToLastLocation!.toStringAsFixed(0)} min',
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,
@@ -348,8 +365,35 @@ class _RouteInfoState extends State<RouteInfo> {
                                       ),
                                       const SizedBox(width: 10),
                                       Text(
-                                        '(${_distanceToLastLocation!.toStringAsFixed(1)} km)',
+                                        _distanceToLastLocation! >= 1000
+                                            ? '(${(_distanceToLastLocation! / 1000).toStringAsFixed(2)} km)'
+                                            : '(${_distanceToLastLocation!.toStringAsFixed(2)} m)',
                                         style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                if (_distanceToLastLocation == null ||
+                                    _timeToLastLocation == null)
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: const [
+                                      Text(
+                                        '--:--',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                      SizedBox(width: 10),
+                                      Text(
+                                        '--:--',
+                                        style: TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 20,
@@ -373,9 +417,11 @@ class _RouteInfoState extends State<RouteInfo> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(description,
-                    textAlign: TextAlign.justify,
-                    style: const TextStyle(fontSize: 16)),
+                Text(
+                  description,
+                  textAlign: TextAlign.justify,
+                  style: const TextStyle(fontSize: 16),
+                ),
               ],
             ),
           ),
@@ -396,7 +442,7 @@ class _RouteInfoState extends State<RouteInfo> {
                       'title': location['name'] as String,
                       'imageUrl':
                           'https://vivelauca.uca.edu.sv/admin-back/uploads/${location['image'] as String}',
-                      'description': location['description'] as String
+                      'description': location['description'] as String,
                     })
                 .toList(),
           ),
@@ -407,14 +453,14 @@ class _RouteInfoState extends State<RouteInfo> {
 
   void startRoute() async {
     if (_routeData != null) {
-      final currentLocation = await _getCurrentLocation();
       if (currentLocation != null) {
         final routeCoordinates = _routeData!['locations']
-            .map<LatLng>((location) =>
-                LatLng(location['latitude'], location['longitude']))
+            .map<LatLng>((location) => LatLng(
+                double.parse(location['latitude'].toString()),
+                double.parse(location['longitude'].toString())))
             .toList();
 
-        await _calculateDistanceAndTime(currentLocation, routeCoordinates);
+        await _calculateDistanceAndTime(currentLocation!, routeCoordinates);
 
         Navigator.push(
           context,
