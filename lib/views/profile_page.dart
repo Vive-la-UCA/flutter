@@ -11,6 +11,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:vive_la_uca/widgets/badge_detail_sheet.dart';
 import 'package:vive_la_uca/services/route_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -209,10 +211,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       backgroundColor: Colors.white,
                       backgroundImage: _profileImageUrl != null
                           ? _profileImageUrl!.startsWith('http')
-                              ? NetworkImage(_profileImageUrl!)
+                              ? CachedNetworkImageProvider(_profileImageUrl!)
                               : FileImage(File(_profileImageUrl!))
                                   as ImageProvider
-                          : const NetworkImage(
+                          : const CachedNetworkImageProvider(
                               'https://i0.wp.com/digitalhealthskills.com/wp-content/uploads/2022/11/3da39-no-user-image-icon-27.png?fit=500%2C500&ssl=1',
                             ),
                     ),
@@ -242,11 +244,14 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
             const SizedBox(height: 15),
-            Text(
-              _userName ?? 'Loading...',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+            Skeletonizer(
+              enabled: _userName == null,
+              child: Text(
+                _userName ?? '',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const SizedBox(height: 30),
@@ -306,7 +311,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           itemBuilder: (context, index) {
                             final badge = _badges[index];
                             return GestureDetector(
-                              onTap: () => _showBadgeDetailSheet(context, badge),
+                              onTap: () =>
+                                  _showBadgeDetailSheet(context, badge),
                               child: Container(
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 8.0),
@@ -326,22 +332,37 @@ class _ProfilePageState extends State<ProfilePage> {
                                   children: [
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(8),
-                                      child: Image.network(
-                                        'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                                            badge['image'],
-                                        width: 50,
-                                        height: 50,
-                                        fit: BoxFit.cover,
+                                      child: Skeletonizer(
+                                        enabled: _isLoading,
+                                        child: CachedNetworkImage(
+                                          imageUrl:
+                                              'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                                                  badge['image'],
+                                          width: 50,
+                                          height: 50,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) =>
+                                              Container(
+                                            width: 50,
+                                            height: 50,
+                                            color: Colors.grey[300],
+                                          ),
+                                          errorWidget: (context, url, error) =>
+                                              const Icon(Icons.error),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(height: 10),
-                                    Text(
-                                      badge['name'] ?? 'Unnamed Badge',
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.orange,
+                                    Skeletonizer(
+                                      enabled: _isLoading,
+                                      child: Text(
+                                        badge['name'] ?? 'Unnamed Badge',
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.orange,
+                                        ),
                                       ),
                                     ),
                                   ],

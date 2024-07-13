@@ -37,14 +37,17 @@ class _LobbyPageState extends State<LobbyPage> {
           baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
       try {
         final userData = await authService.checkToken(token);
-        _token = token;
-        _badgeIds = List<String>.from(userData['badges'] ?? []);
-        futureRoutes =
-            RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
-                .getAllRoutes(token);
-        futureLocations =
-            LocationService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
-                .getAllLocations(token);
+        if (!mounted) return;
+        setState(() {
+          _token = token;
+          _badgeIds = List<String>.from(userData['badges'] ?? []);
+          futureRoutes =
+              RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
+                  .getAllRoutes(token);
+          futureLocations = LocationService(
+                  baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
+              .getAllLocations(token);
+        });
 
         final routes = await futureRoutes;
         final badgeService =
@@ -53,23 +56,32 @@ class _LobbyPageState extends State<LobbyPage> {
         for (var route in routes) {
           final badge =
               await badgeService.getBadgeByRouteId(_token!, route['uid']);
-          _badgeStatus[route['uid']] =
-              badge != null && _badgeIds.contains(badge['uid']);
+          if (!mounted) return;
+          setState(() {
+            _badgeStatus[route['uid']] =
+                badge != null && _badgeIds.contains(badge['uid']);
+          });
         }
 
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       } catch (e) {
         print('Failed to fetch user data: $e');
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    } else {
+      if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
-    } else {
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 

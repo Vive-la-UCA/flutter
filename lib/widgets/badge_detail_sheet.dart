@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class BadgeDetailSheet extends StatelessWidget {
   final String imageUrl;
@@ -27,18 +29,14 @@ class BadgeDetailSheet extends StatelessWidget {
         'He conseguido la insignia "$badgeName" en la ruta "$routeName" gracias a Vive la UCA!';
 
     try {
-      // Imprimir las URLs para verificar que sean correctas
-      print('imageUrl: $imageUrl');
-      print('routeImageUrl: $routeImageUrl');
+      // Descargar las imágenes en paralelo
+      final responses = await Future.wait([
+        http.get(Uri.parse(imageUrl)),
+        http.get(Uri.parse(routeImageUrl)),
+      ]);
 
-      // Verificar si las URLs son válidas
-      if (imageUrl.isEmpty || routeImageUrl.isEmpty) {
-        throw Exception('Las URLs de las imágenes no pueden estar vacías');
-      }
-
-      // Descargar las imágenes
-      final badgeResponse = await http.get(Uri.parse(imageUrl));
-      final routeResponse = await http.get(Uri.parse(routeImageUrl));
+      final badgeResponse = responses[0];
+      final routeResponse = responses[1];
 
       if (badgeResponse.statusCode == 200 && routeResponse.statusCode == 200) {
         final badgeBytes = badgeResponse.bodyBytes;
@@ -199,100 +197,105 @@ class BadgeDetailSheet extends StatelessWidget {
         children: [
           Row(
             children: [
-              ClipOval(
-                child: Image.network(
-                  imageUrl,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: CachedNetworkImage(
+                  imageUrl: imageUrl,
                   width: 100,
                   height: 100,
                   fit: BoxFit.cover,
+                  placeholder: (context, url) => Skeletonizer(
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      color: Colors.grey[300],
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Icon(Icons.error),
                 ),
               ),
               const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        badgeName,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Skeletonizer(
+                          enabled: badgeName.isEmpty,
+                          child: Text(
+                            badgeName,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        const Icon(
+                          Icons.verified,
+                          color: Colors.orange,
+                          size: 24,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    RichText(
+                      text: TextSpan(
+                        text: 'Conseguido en ',
                         style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
                           color: Colors.black,
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      const Icon(
-                        Icons.verified,
-                        color: Colors.orange,
-                        size: 24,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 5),
-                  RichText(
-                    text: TextSpan(
-                      text: 'Conseguido en ',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: routeName,
-                          style: const TextStyle(
-                            color: Colors.orange,
-                            fontWeight: FontWeight.bold,
+                        children: [
+                          TextSpan(
+                            text: routeName,
+                            style: const TextStyle(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  ElevatedButton(
-                    onPressed: () => _shareBadge(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 5,
-                        horizontal: 10,
+                        ],
                       ),
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.share,
-                          color: Colors.white,
-                          size: 20,
+                    const SizedBox(height: 5),
+                    ElevatedButton(
+                      onPressed: () => _shareBadge(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Compartir',
-                          style: TextStyle(
-                            fontSize: 15,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 5,
+                          horizontal: 10,
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.share,
                             color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                            size: 20,
                           ),
-                        ),
-                      ],
+                          SizedBox(width: 8),
+                          Text(
+                            'Compartir',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               )
             ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            badgeName,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
           ),
         ],
       ),
