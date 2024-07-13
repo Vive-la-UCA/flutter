@@ -3,7 +3,11 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+<<<<<<< HEAD
   connectivity_plus
+=======
+  connectivity_plus_windows
+>>>>>>> f3dee4e78d04502e37fc35a47257b27af4e60688
   file_selector_windows
   firebase_core
   geolocator_windows

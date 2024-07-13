@@ -1,3 +1,4 @@
+// ignore_for_file: prefer_interpolation_to_compose_strings
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -21,15 +22,17 @@ import 'package:vive_la_uca/widgets/dialog_route.dart'; // Importa CustomDialogR
 import 'package:vive_la_uca/services/badge_service.dart';
 import 'package:vive_la_uca/services/auth_service.dart';
 import 'package:vive_la_uca/services/user_service.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class MapPage extends StatefulWidget {
   final String? routeId;
   final String? routeName;
   final String? routeImage;
-  final double? distanceToLastLocation;
-  final double? timeToLastLocation;
+  double? distanceToLastLocation;
+  double? timeToLastLocation;
 
-  const MapPage({
+  MapPage({
     Key? key,
     this.routeId,
     this.routeName,
@@ -55,11 +58,14 @@ class _MapPageState extends State<MapPage> {
   static const int historyLength = 5;
   static const double minDistance = 1.0;
   String? _routeId;
-  String? _token; // Para almacenar el token del usuario
-  String? _userId; // Para almacenar el ID del usuario
-  String? _badgeId; // Para almacenar el ID del badge
-  String? _badgeName; // Para almacenar el nombre de la badge
-  String? _badgeImageUrl; // Para almacenar la URL de la imagen de la badge
+  String? _token;
+  String? _userId;
+  String? _badgeId;
+  String? _badgeName;
+  String? _badgeImageUrl;
+  bool _isLoadingRoute = true;
+  bool _hasConnection = true;
+  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
 
   List<LatLng> routeCoordinates = [];
   List<Map<String, dynamic>> routeLocations = [];
@@ -67,10 +73,18 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen(_updateConnectionStatus);
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
     _routeId = widget.routeId;
-    _checkPermissions();
-    _loadToken();
-    _loadVisitedLocations();
+    await Future.wait([
+      _checkPermissions(),
+      _loadToken(),
+      _loadVisitedLocations(),
+    ]);
 
     positionStream = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
@@ -78,14 +92,7 @@ class _MapPageState extends State<MapPage> {
         distanceFilter: 0,
       ),
     ).listen((Position position) {
-      if (_previousPosition == null ||
-          Geolocator.distanceBetween(
-                _previousPosition!.latitude,
-                _previousPosition!.longitude,
-                position.latitude,
-                position.longitude,
-              ) >
-              minDistance) {
+      if (_shouldUpdatePosition(position)) {
         LatLng smoothedLocation = _getSmoothedLocation(
           LatLng(position.latitude, position.longitude),
         );
@@ -96,6 +103,7 @@ class _MapPageState extends State<MapPage> {
           });
           _checkProximity();
           _saveVisitedLocations();
+          _updateDistanceAndTime();
         }
       }
     });
@@ -104,7 +112,67 @@ class _MapPageState extends State<MapPage> {
   @override
   void dispose() {
     positionStream?.cancel();
+    _connectivitySubscription?.cancel();
     super.dispose();
+  }
+
+  String _distanceString = '';
+  String _timeString = '';
+
+  void _updateConnectionStatus(ConnectivityResult result) {
+    setState(() {
+      _hasConnection = result != ConnectivityResult.none;
+      if (_hasConnection) {
+        _loadToken();
+      }
+    });
+  }
+
+  Future<void> _saveDataToCache(String key, String data) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(key, data);
+  }
+
+  Future<String?> _loadDataFromCache(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(key);
+  }
+
+  void _updateDistanceAndTime() {
+    if (currentLocation != null && routeCoordinates.isNotEmpty) {
+      // Calcular la distancia desde la ubicación actual hasta el último punto de la ruta
+      double distance =
+          _calculateDistance(currentLocation!, routeCoordinates.last);
+
+      // Calcular el tiempo estimado basado en la distancia
+      double time = _calculateTime(distance);
+
+      // Convertir la distancia a la unidad adecuada
+      String distanceString;
+      if (distance >= 1000) {
+        distanceString = (distance / 1000).toStringAsFixed(2) + ' km';
+      } else {
+        distanceString = distance.toStringAsFixed(2) + ' m';
+      }
+
+      // Convertir el tiempo a la unidad adecuada
+      String timeString;
+      if (time >= 60) {
+        int hours = (time / 60).floor();
+        int minutes = (time % 60).round();
+        timeString = '$hours h $minutes min';
+      } else {
+        timeString = time.toStringAsFixed(0) + ' min';
+      }
+
+      // Actualizar el estado con la nueva distancia y tiempo
+      setState(() {
+        widget.distanceToLastLocation = distance;
+        widget.timeToLastLocation = time;
+        _distanceString = distanceString;
+        _timeString = timeString;
+      });
+    }
   }
 
   Future<void> _checkPermissions() async {
@@ -127,7 +195,22 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  void _loadToken() async {
+  double _calculateDistance(LatLng start, LatLng end) {
+    return Geolocator.distanceBetween(
+      start.latitude,
+      start.longitude,
+      end.latitude,
+      end.longitude,
+    );
+  }
+
+  double _calculateTime(double distance) {
+    // Supongamos que la velocidad promedio es 5 km/h (5000 m/h)
+    const double averageSpeed = 5000 / 3600; // en m/s
+    return distance / averageSpeed / 60; // en minutos
+  }
+
+  Future<void> _loadToken() async {
     final token = await TokenStorage.getToken();
     if (token != null) {
       final authService = AuthService(
@@ -140,81 +223,189 @@ class _MapPageState extends State<MapPage> {
               'uid']; // Asumiendo que el ID del usuario está en el campo 'id'
         });
       } catch (e) {
-        print('Failed to get user data: $e');
+        // Cargar datos desde el caché si no hay conexión
+        final cachedUserData = await _loadDataFromCache('userData');
+        if (cachedUserData != null) {
+          final userData = jsonDecode(cachedUserData);
+          setState(() {
+            _token = token;
+            _userId = userData['uid'];
+          });
+        } else {
+          print('Failed to fetch user data: $e');
+        }
       }
 
       if (_routeId != null) {
-        // En el método _loadToken(), después de obtener los datos de la badge:
-final badgeService = BadgeService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
-try {
-  final badge = await badgeService.getBadgeByRouteId(token, _routeId!);
-  setState(() {
-    _badgeId = badge['uid'];
-    _badgeName = badge['name'];
-    _badgeImageUrl = 'https://vivelauca.uca.edu.sv/admin-back/uploads/' + badge['image']; // Formar la URL completa
-  });
-} catch (e) {
-  print('Failed to get badge ID: $e');
-}
-
+        final badgeService =
+            BadgeService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
+        try {
+          final badge = await badgeService.getBadgeByRouteId(token, _routeId!);
+          setState(() {
+            _badgeId = badge['uid'];
+            _badgeName = badge['name'];
+            _badgeImageUrl =
+                'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                    badge['image']; // Formar la URL completa
+          });
+        } catch (e) {
+          // Cargar datos desde el caché si no hay conexión
+          final cachedBadgeData =
+              await _loadDataFromCache('badgeData_$_routeId');
+          if (cachedBadgeData != null) {
+            final badge = jsonDecode(cachedBadgeData);
+            setState(() {
+              _badgeId = badge['uid'];
+              _badgeName = badge['name'];
+              _badgeImageUrl =
+                  'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                      badge['image'];
+            });
+          } else {
+            print('Failed to get badge ID: $e');
+          }
+        }
       }
 
       final routeService =
           RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
 
       if (_routeId != null) {
-        final routeResponse = await routeService.getOneRoute(token, _routeId!);
-        final locationsFromRoute = routeResponse['locations'];
+        try {
+          final routeResponse =
+              await routeService.getOneRoute(token, _routeId!);
+          await _saveDataToCache(
+              'routeResponse_$_routeId', jsonEncode(routeResponse));
+          final locationsFromRoute = routeResponse['locations'];
 
-        if (mounted) {
-          setState(() {
-            routeCoordinates = locationsFromRoute.map<LatLng>((location) {
-              return LatLng(location['latitude'], location['longitude']);
-            }).toList();
+          if (mounted) {
+            setState(() {
+              routeCoordinates = locationsFromRoute.map<LatLng>((location) {
+                return LatLng(location['latitude'], location['longitude']);
+              }).toList();
 
-            routeLocations =
-                locationsFromRoute.map<Map<String, dynamic>>((location) {
-              return {
-                '_id': location['_id'],
-                'name': location['name'],
-                'description': location['description'],
-                'coordinates':
-                    LatLng(location['latitude'], location['longitude']),
-                'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                    location['image'],
-              };
-            }).toList();
-            _showRoute = true;
-          });
+              routeLocations =
+                  locationsFromRoute.map<Map<String, dynamic>>((location) {
+                return {
+                  '_id': location['_id'],
+                  'name': location['name'],
+                  'description': location['description'],
+                  'coordinates':
+                      LatLng(location['latitude'], location['longitude']),
+                  'imageUrl':
+                      'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                          location['image'],
+                };
+              }).toList();
+              _showRoute = true;
+              _isLoadingRoute = false;
+            });
 
-          // Verificar si todas las localidades de la ruta ya han sido visitadas
-          _checkIfRouteCompleted(initialCheck: true);
+            // Verificar si todas las localidades de la ruta ya han sido visitadas
+            _checkIfRouteCompleted(initialCheck: true);
+          }
+        } catch (e) {
+          // Cargar datos desde el caché si no hay conexión
+          final cachedRouteResponse =
+              await _loadDataFromCache('routeResponse_$_routeId');
+          if (cachedRouteResponse != null) {
+            final routeResponse = jsonDecode(cachedRouteResponse);
+            final locationsFromRoute = routeResponse['locations'];
+
+            if (mounted) {
+              setState(() {
+                routeCoordinates = locationsFromRoute.map<LatLng>((location) {
+                  return LatLng(location['latitude'], location['longitude']);
+                }).toList();
+
+                routeLocations =
+                    locationsFromRoute.map<Map<String, dynamic>>((location) {
+                  return {
+                    '_id': location['_id'],
+                    'name': location['name'],
+                    'description': location['description'],
+                    'coordinates':
+                        LatLng(location['latitude'], location['longitude']),
+                    'imageUrl':
+                        'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                            location['image'],
+                  };
+                }).toList();
+                _showRoute = true;
+                _isLoadingRoute = false;
+              });
+
+              // Verificar si todas las localidades de la ruta ya han sido visitadas
+              _checkIfRouteCompleted(initialCheck: true);
+            }
+          } else {
+            print('Failed to get route data: $e');
+          }
         }
       }
 
-      final locationResponse = await LocationService(
-              baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
-          .getAllLocations(token);
-      if (locationResponse != null) {
-        print('Location Response: ${locationResponse.length} locations');
-        if (mounted) {
-          setState(() {
-            locations = locationResponse.map<Map<String, dynamic>>((location) {
-              return {
-                '_id': location['_id'],
-                'name': location['name'],
-                'description': location['description'],
-                'coordinates':
-                    LatLng(location['latitude'], location['longitude']),
-                'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                    location['image'],
-              };
-            }).toList();
-            _sortRouteLocationsByDistance();
-            if (_routeId != null) {
-              _calculateRoute();
+      try {
+        final locationResponse = await LocationService(
+                baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
+            .getAllLocations(token);
+        await _saveDataToCache(
+            'locationResponse', jsonEncode(locationResponse));
+        if (locationResponse != null) {
+          print('Location Response: ${locationResponse.length} locations');
+          if (mounted) {
+            setState(() {
+              locations =
+                  locationResponse.map<Map<String, dynamic>>((location) {
+                return {
+                  '_id': location['_id'],
+                  'name': location['name'],
+                  'description': location['description'],
+                  'coordinates':
+                      LatLng(location['latitude'], location['longitude']),
+                  'imageUrl':
+                      'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                          location['image'],
+                };
+              }).toList();
+              _sortRouteLocationsByDistance();
+              if (_routeId != null) {
+                _calculateRoute();
+              }
+            });
+          }
+        }
+      } catch (e) {
+        // Cargar datos desde el caché si no hay conexión
+        final cachedLocationResponse =
+            await _loadDataFromCache('locationResponse');
+        if (cachedLocationResponse != null) {
+          final locationResponse = jsonDecode(cachedLocationResponse);
+          if (locationResponse != null) {
+            print('Location Response: ${locationResponse.length} locations');
+            if (mounted) {
+              setState(() {
+                locations =
+                    locationResponse.map<Map<String, dynamic>>((location) {
+                  return {
+                    '_id': location['_id'],
+                    'name': location['name'],
+                    'description': location['description'],
+                    'coordinates':
+                        LatLng(location['latitude'], location['longitude']),
+                    'imageUrl':
+                        'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                            location['image'],
+                  };
+                }).toList();
+                _sortRouteLocationsByDistance();
+                if (_routeId != null) {
+                  _calculateRoute();
+                }
+              });
             }
-          });
+          }
+        } else {
+          print('Failed to get location data: $e');
         }
       }
     } else {
@@ -239,6 +430,17 @@ try {
         visitedLocations = savedLocations.toSet();
       });
     }
+  }
+
+  bool _shouldUpdatePosition(Position position) {
+    return _previousPosition == null ||
+        Geolocator.distanceBetween(
+              _previousPosition!.latitude,
+              _previousPosition!.longitude,
+              position.latitude,
+              position.longitude,
+            ) >
+            minDistance;
   }
 
   void _sortRouteLocationsByDistance() {
@@ -385,45 +587,51 @@ try {
   }
 
   // Dentro de la clase _MapPageState
-void _navigateToHome() {
-  context.go('/home');
-}
+  void _navigateToHome() {
+    context.go('/home');
+  }
 
   Future<void> showCustomDialogRoute() async {
-  print('BadgeName: $_badgeName');
-  print('BadgeImageUrl: _badgeImageUrl');
-  print('RouteName: ${widget.routeName}');
-  print('RouteImage: ${widget.routeImage}');
-  
-  // Mostrar el dialogo
-  if (_badgeName != null && _badgeImageUrl != null && widget.routeName != null && widget.routeImage != null) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return CustomDialogRoute(
-          locationName: "última ubicación",
-          badgeName: _badgeName!,
-          badgeImageUrl: _badgeImageUrl!,
-          routeName: widget.routeName!,
-          routeImage: widget.routeImage!,
-          onConfirm: _navigateToHome, // Pasa la función de navegación
-        );
-      },
-    );
-    // Agregar la badge al usuario
-    if (_token != null && _userId != null && _badgeId != null) {
-      print('Pase hasta aqui');
-      final userService = UserService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
-      try {
-        await userService.addBadgeToUser(_token!, _userId!, _badgeId!); // Usar el userId y badgeId obtenidos
-      } catch (e) {
-        print('Failed to add badge to user: $e');
+    print('BadgeName: $_badgeName');
+    print('BadgeImageUrl: _badgeImageUrl');
+    print('RouteName: ${widget.routeName}');
+    print('RouteImage: ${widget.routeImage}');
+
+    // Mostrar el dialogo
+    if (_badgeName != null &&
+        _badgeImageUrl != null &&
+        widget.routeName != null &&
+        widget.routeImage != null) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return CustomDialogRoute(
+            locationName: "última ubicación",
+            badgeName: _badgeName!,
+            badgeImageUrl: _badgeImageUrl!,
+            routeName: widget.routeName!,
+            routeImage: widget.routeImage!,
+            onConfirm: _navigateToHome, // Pasa la función de navegación
+          );
+        },
+      );
+      // Agregar la badge al usuario
+      if (_token != null && _userId != null && _badgeId != null) {
+        print('Pase hasta aqui');
+        final userService =
+            UserService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
+        try {
+          await userService.addBadgeToUser(_token!, _userId!,
+              _badgeId!); // Usar el userId y badgeId obtenidos
+        } catch (e) {
+          print('Failed to add badge to user: $e');
+        }
       }
+    } else {
+      print(
+          'Error: BadgeName, BadgeImageUrl, RouteName, or RouteImage is null');
     }
-  } else {
-    print('Error: BadgeName, BadgeImageUrl, RouteName, or RouteImage is null');
   }
-}
 
   void _showRouteCompletedDialog() {
     showDialog(
@@ -629,20 +837,27 @@ void _navigateToHome() {
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    child: RouteInfoWidget(
-                      routeName: widget.routeName ?? 'Ruta desconocida',
-                      locations: routeLocations
-                          .map((loc) => loc['name'] as String)
-                          .toList(),
-                      imageUrl: routeLocations.isNotEmpty
-                          ? routeLocations[0]['imageUrl'] as String
-                          : 'https://via.placeholder.com/150',
-                      onCancel: _toggleRouteVisibility,
-                      distance: widget.distanceToLastLocation,
-                      time: widget.timeToLastLocation,
-                      nearestLocation: _nearestLocation?['name'],
-                      imageRoute: widget.routeImage,
-                    ),
+                    child: _isLoadingRoute
+                        ? Skeletonizer(
+                            child: Container(
+                              height: 150,
+                              color: Colors.grey[300],
+                            ),
+                          )
+                        : RouteInfoWidget(
+                            routeName: widget.routeName ?? 'Ruta desconocida',
+                            locations: routeLocations
+                                .map((loc) => loc['name'] as String)
+                                .toList(),
+                            imageUrl: routeLocations.isNotEmpty
+                                ? routeLocations[0]['imageUrl'] as String
+                                : 'https://via.placeholder.com/150',
+                            onCancel: _toggleRouteVisibility,
+                            distanceString: _distanceString,
+                            nearestLocation: _nearestLocation?['name'],
+                            imageRoute: widget.routeImage,
+                            timeString: _timeString,
+                          ),
                   ),
                 Positioned(
                   bottom: _showRoute ? 240 : 16.0,

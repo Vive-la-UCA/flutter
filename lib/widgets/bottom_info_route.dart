@@ -1,29 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class RouteInfoWidget extends StatelessWidget {
   final String routeName;
   final List<String> locations;
   final String imageUrl;
   final VoidCallback onCancel;
-  final double? distance;
-  final double? time;
+  final String? distanceString;
   final String? nearestLocation;
   final String? imageRoute;
+  final String? timeString;
 
   RouteInfoWidget({
     required this.routeName,
     required this.locations,
     required this.imageUrl,
     required this.onCancel,
-    this.distance,
-    this.time,
+    this.distanceString,
     this.nearestLocation,
     this.imageRoute,
+    this.timeString,
   });
 
   @override
   Widget build(BuildContext context) {
-    print(nearestLocation);
     return Container(
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.only(
@@ -57,9 +57,9 @@ class RouteInfoWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      distance != null
-                          ? '${distance!.toStringAsFixed(2)} m'
-                          : 'N/A',
+                      distanceString != null && distanceString!.isNotEmpty
+                          ? distanceString!
+                          : '--:--',
                       style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -78,7 +78,9 @@ class RouteInfoWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      time != null ? '${time!.toStringAsFixed(0)} min' : 'N/A',
+                      timeString != null && timeString!.isNotEmpty
+                          ? timeString!
+                          : '--:--',
                       style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -126,11 +128,17 @@ class RouteInfoWidget extends StatelessWidget {
                       const EdgeInsets.all(4.0), // Padding for purple border
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(15),
-                    child: Image.network(
-                      imageRoute ?? imageUrl, // Mostrar la imagen de la ruta
+                    child: CachedNetworkImage(
+                      imageUrl: imageRoute ??
+                          imageUrl, // Mostrar la imagen de la ruta
                       width: 100,
                       height: 100,
                       fit: BoxFit.cover,
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                      errorWidget: (context, url, error) =>
+                          const Icon(Icons.error),
                     ),
                   ),
                 ),
@@ -160,7 +168,7 @@ class RouteInfoWidget extends StatelessWidget {
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: location == nearestLocation
-                                        ? Color(0xFF704FCE)
+                                        ? const Color(0xFF704FCE)
                                         : Colors.black,
                                   ),
                                 ),

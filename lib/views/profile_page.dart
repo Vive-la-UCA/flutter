@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -11,6 +12,10 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:vive_la_uca/widgets/badge_detail_sheet.dart';
 import 'package:vive_la_uca/services/route_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:vive_la_uca/views/no_connection.dart'; // Importa la pantalla de error
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -25,12 +30,31 @@ class _ProfilePageState extends State<ProfilePage> {
   List<Map<String, dynamic>> _badges = []; // To hold detailed badge data
   String? _profileImageUrl;
   bool _isLoading = true; // Indicator for loading badges
+  bool _hasConnection = true;
+  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
 
   @override
   void initState() {
     super.initState();
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen(_updateConnectionStatus);
     _loadProfileImage();
     _loadToken();
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
+  }
+
+  void _updateConnectionStatus(ConnectivityResult result) {
+    setState(() {
+      _hasConnection = result != ConnectivityResult.none;
+      if (_hasConnection && !_isLoading) {
+        _loadToken();
+      }
+    });
   }
 
   Future<void> _loadProfileImage() async {
@@ -88,7 +112,13 @@ class _ProfilePageState extends State<ProfilePage> {
         });
         _fetchBadges(token);
       } catch (e) {
-        _showErrorDialog('Failed to fetch user data: $e');
+        if (e is SocketException) {
+          setState(() {
+            _hasConnection = false;
+          });
+        } else {
+          _showErrorDialog('Failed to fetch user data: $e');
+        }
       }
     }
   }
@@ -109,10 +139,16 @@ class _ProfilePageState extends State<ProfilePage> {
         _isLoading = false; // Set loading to false when done
       });
     } catch (e) {
-      _showErrorDialog('Failed to fetch badges: $e');
-      setState(() {
-        _isLoading = false; // Set loading to false even on error
-      });
+      if (e is SocketException) {
+        setState(() {
+          _hasConnection = false;
+        });
+      } else {
+        _showErrorDialog('Failed to fetch badges: $e');
+        setState(() {
+          _isLoading = false; // Set loading to false even on error
+        });
+      }
     }
   }
 
@@ -168,6 +204,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_hasConnection) {
+      return NoConnectionScreen(onRetry: _loadToken);
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -209,10 +249,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       backgroundColor: Colors.white,
                       backgroundImage: _profileImageUrl != null
                           ? _profileImageUrl!.startsWith('http')
-                              ? NetworkImage(_profileImageUrl!)
+                              ? CachedNetworkImageProvider(_profileImageUrl!)
                               : FileImage(File(_profileImageUrl!))
                                   as ImageProvider
-                          : const NetworkImage(
+                          : const CachedNetworkImageProvider(
                               'https://i0.wp.com/digitalhealthskills.com/wp-content/uploads/2022/11/3da39-no-user-image-icon-27.png?fit=500%2C500&ssl=1',
                             ),
                     ),
@@ -242,11 +282,14 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
             const SizedBox(height: 15),
-            Text(
-              _userName ?? 'Loading...',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+            Skeletonizer(
+              enabled: _userName == null,
+              child: Text(
+                _userName ?? '',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const SizedBox(height: 30),
@@ -306,7 +349,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           itemBuilder: (context, index) {
                             final badge = _badges[index];
                             return GestureDetector(
-                              onTap: () => _showBadgeDetailSheet(context, badge),
+                              onTap: () =>
+                                  _showBadgeDetailSheet(context, badge),
                               child: Container(
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 8.0),
@@ -326,22 +370,37 @@ class _ProfilePageState extends State<ProfilePage> {
                                   children: [
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(8),
-                                      child: Image.network(
-                                        'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                                            badge['image'],
-                                        width: 50,
-                                        height: 50,
-                                        fit: BoxFit.cover,
+                                      child: Skeletonizer(
+                                        enabled: _isLoading,
+                                        child: CachedNetworkImage(
+                                          imageUrl:
+                                              'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                                                  badge['image'],
+                                          width: 50,
+                                          height: 50,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) =>
+                                              Container(
+                                            width: 50,
+                                            height: 50,
+                                            color: Colors.grey[300],
+                                          ),
+                                          errorWidget: (context, url, error) =>
+                                              const Icon(Icons.error),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(height: 10),
-                                    Text(
-                                      badge['name'] ?? 'Unnamed Badge',
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.orange,
+                                    Skeletonizer(
+                                      enabled: _isLoading,
+                                      child: Text(
+                                        badge['name'] ?? 'Unnamed Badge',
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.orange,
+                                        ),
                                       ),
                                     ),
                                   ],
