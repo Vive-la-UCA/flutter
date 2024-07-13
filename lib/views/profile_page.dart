@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -13,6 +14,8 @@ import 'package:vive_la_uca/services/route_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:vive_la_uca/views/no_connection.dart'; // Importa la pantalla de error
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -27,12 +30,31 @@ class _ProfilePageState extends State<ProfilePage> {
   List<Map<String, dynamic>> _badges = []; // To hold detailed badge data
   String? _profileImageUrl;
   bool _isLoading = true; // Indicator for loading badges
+  bool _hasConnection = true;
+  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
 
   @override
   void initState() {
     super.initState();
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen(_updateConnectionStatus);
     _loadProfileImage();
     _loadToken();
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
+  }
+
+  void _updateConnectionStatus(ConnectivityResult result) {
+    setState(() {
+      _hasConnection = result != ConnectivityResult.none;
+      if (_hasConnection && !_isLoading) {
+        _loadToken();
+      }
+    });
   }
 
   Future<void> _loadProfileImage() async {
@@ -90,7 +112,13 @@ class _ProfilePageState extends State<ProfilePage> {
         });
         _fetchBadges(token);
       } catch (e) {
-        _showErrorDialog('Failed to fetch user data: $e');
+        if (e is SocketException) {
+          setState(() {
+            _hasConnection = false;
+          });
+        } else {
+          _showErrorDialog('Failed to fetch user data: $e');
+        }
       }
     }
   }
@@ -111,10 +139,16 @@ class _ProfilePageState extends State<ProfilePage> {
         _isLoading = false; // Set loading to false when done
       });
     } catch (e) {
-      _showErrorDialog('Failed to fetch badges: $e');
-      setState(() {
-        _isLoading = false; // Set loading to false even on error
-      });
+      if (e is SocketException) {
+        setState(() {
+          _hasConnection = false;
+        });
+      } else {
+        _showErrorDialog('Failed to fetch badges: $e');
+        setState(() {
+          _isLoading = false; // Set loading to false even on error
+        });
+      }
     }
   }
 
@@ -170,6 +204,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_hasConnection) {
+      return NoConnectionScreen(onRetry: _loadToken);
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Column(

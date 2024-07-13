@@ -23,6 +23,7 @@ import 'package:vive_la_uca/services/badge_service.dart';
 import 'package:vive_la_uca/services/auth_service.dart';
 import 'package:vive_la_uca/services/user_service.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class MapPage extends StatefulWidget {
   final String? routeId;
@@ -63,6 +64,8 @@ class _MapPageState extends State<MapPage> {
   String? _badgeName;
   String? _badgeImageUrl;
   bool _isLoadingRoute = true;
+  bool _hasConnection = true;
+  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
 
   List<LatLng> routeCoordinates = [];
   List<Map<String, dynamic>> routeLocations = [];
@@ -70,6 +73,8 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen(_updateConnectionStatus);
     _initialize();
   }
 
@@ -107,11 +112,31 @@ class _MapPageState extends State<MapPage> {
   @override
   void dispose() {
     positionStream?.cancel();
+    _connectivitySubscription?.cancel();
     super.dispose();
   }
 
   String _distanceString = '';
   String _timeString = '';
+
+  void _updateConnectionStatus(ConnectivityResult result) {
+    setState(() {
+      _hasConnection = result != ConnectivityResult.none;
+      if (_hasConnection) {
+        _loadToken();
+      }
+    });
+  }
+
+  Future<void> _saveDataToCache(String key, String data) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(key, data);
+  }
+
+  Future<String?> _loadDataFromCache(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(key);
+  }
 
   void _updateDistanceAndTime() {
     if (currentLocation != null && routeCoordinates.isNotEmpty) {
@@ -198,7 +223,17 @@ class _MapPageState extends State<MapPage> {
               'uid']; // Asumiendo que el ID del usuario está en el campo 'id'
         });
       } catch (e) {
-        print('Failed to get user data: $e');
+        // Cargar datos desde el caché si no hay conexión
+        final cachedUserData = await _loadDataFromCache('userData');
+        if (cachedUserData != null) {
+          final userData = jsonDecode(cachedUserData);
+          setState(() {
+            _token = token;
+            _userId = userData['uid'];
+          });
+        } else {
+          print('Failed to fetch user data: $e');
+        }
       }
 
       if (_routeId != null) {
@@ -214,7 +249,21 @@ class _MapPageState extends State<MapPage> {
                     badge['image']; // Formar la URL completa
           });
         } catch (e) {
-          print('Failed to get badge ID: $e');
+          // Cargar datos desde el caché si no hay conexión
+          final cachedBadgeData =
+              await _loadDataFromCache('badgeData_$_routeId');
+          if (cachedBadgeData != null) {
+            final badge = jsonDecode(cachedBadgeData);
+            setState(() {
+              _badgeId = badge['uid'];
+              _badgeName = badge['name'];
+              _badgeImageUrl =
+                  'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                      badge['image'];
+            });
+          } else {
+            print('Failed to get badge ID: $e');
+          }
         }
       }
 
@@ -222,59 +271,141 @@ class _MapPageState extends State<MapPage> {
           RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
 
       if (_routeId != null) {
-        final routeResponse = await routeService.getOneRoute(token, _routeId!);
-        final locationsFromRoute = routeResponse['locations'];
+        try {
+          final routeResponse =
+              await routeService.getOneRoute(token, _routeId!);
+          await _saveDataToCache(
+              'routeResponse_$_routeId', jsonEncode(routeResponse));
+          final locationsFromRoute = routeResponse['locations'];
 
-        if (mounted) {
-          setState(() {
-            routeCoordinates = locationsFromRoute.map<LatLng>((location) {
-              return LatLng(location['latitude'], location['longitude']);
-            }).toList();
+          if (mounted) {
+            setState(() {
+              routeCoordinates = locationsFromRoute.map<LatLng>((location) {
+                return LatLng(location['latitude'], location['longitude']);
+              }).toList();
 
-            routeLocations =
-                locationsFromRoute.map<Map<String, dynamic>>((location) {
-              return {
-                '_id': location['_id'],
-                'name': location['name'],
-                'description': location['description'],
-                'coordinates':
-                    LatLng(location['latitude'], location['longitude']),
-                'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                    location['image'],
-              };
-            }).toList();
-            _showRoute = true;
-            _isLoadingRoute = false;
-          });
+              routeLocations =
+                  locationsFromRoute.map<Map<String, dynamic>>((location) {
+                return {
+                  '_id': location['_id'],
+                  'name': location['name'],
+                  'description': location['description'],
+                  'coordinates':
+                      LatLng(location['latitude'], location['longitude']),
+                  'imageUrl':
+                      'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                          location['image'],
+                };
+              }).toList();
+              _showRoute = true;
+              _isLoadingRoute = false;
+            });
 
-          // Verificar si todas las localidades de la ruta ya han sido visitadas
-          _checkIfRouteCompleted(initialCheck: true);
+            // Verificar si todas las localidades de la ruta ya han sido visitadas
+            _checkIfRouteCompleted(initialCheck: true);
+          }
+        } catch (e) {
+          // Cargar datos desde el caché si no hay conexión
+          final cachedRouteResponse =
+              await _loadDataFromCache('routeResponse_$_routeId');
+          if (cachedRouteResponse != null) {
+            final routeResponse = jsonDecode(cachedRouteResponse);
+            final locationsFromRoute = routeResponse['locations'];
+
+            if (mounted) {
+              setState(() {
+                routeCoordinates = locationsFromRoute.map<LatLng>((location) {
+                  return LatLng(location['latitude'], location['longitude']);
+                }).toList();
+
+                routeLocations =
+                    locationsFromRoute.map<Map<String, dynamic>>((location) {
+                  return {
+                    '_id': location['_id'],
+                    'name': location['name'],
+                    'description': location['description'],
+                    'coordinates':
+                        LatLng(location['latitude'], location['longitude']),
+                    'imageUrl':
+                        'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                            location['image'],
+                  };
+                }).toList();
+                _showRoute = true;
+                _isLoadingRoute = false;
+              });
+
+              // Verificar si todas las localidades de la ruta ya han sido visitadas
+              _checkIfRouteCompleted(initialCheck: true);
+            }
+          } else {
+            print('Failed to get route data: $e');
+          }
         }
       }
 
-      final locationResponse = await LocationService(
-              baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
-          .getAllLocations(token);
-      if (locationResponse != null) {
-        print('Location Response: ${locationResponse.length} locations');
-        if (mounted) {
-          setState(() {
-            locations = locationResponse.map<Map<String, dynamic>>((location) {
-              return {
-                '_id': location['_id'],
-                'name': location['name'],
-                'description': location['description'],
-                'coordinates':
-                    LatLng(location['latitude'], location['longitude']),
-                'imageUrl': 'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                    location['image'],
-              };
-            }).toList();
-            _sortRouteLocationsByDistance();
-            if (_routeId != null) {
-              _calculateRoute();
+      try {
+        final locationResponse = await LocationService(
+                baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
+            .getAllLocations(token);
+        await _saveDataToCache(
+            'locationResponse', jsonEncode(locationResponse));
+        if (locationResponse != null) {
+          print('Location Response: ${locationResponse.length} locations');
+          if (mounted) {
+            setState(() {
+              locations =
+                  locationResponse.map<Map<String, dynamic>>((location) {
+                return {
+                  '_id': location['_id'],
+                  'name': location['name'],
+                  'description': location['description'],
+                  'coordinates':
+                      LatLng(location['latitude'], location['longitude']),
+                  'imageUrl':
+                      'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                          location['image'],
+                };
+              }).toList();
+              _sortRouteLocationsByDistance();
+              if (_routeId != null) {
+                _calculateRoute();
+              }
+            });
+          }
+        }
+      } catch (e) {
+        // Cargar datos desde el caché si no hay conexión
+        final cachedLocationResponse =
+            await _loadDataFromCache('locationResponse');
+        if (cachedLocationResponse != null) {
+          final locationResponse = jsonDecode(cachedLocationResponse);
+          if (locationResponse != null) {
+            print('Location Response: ${locationResponse.length} locations');
+            if (mounted) {
+              setState(() {
+                locations =
+                    locationResponse.map<Map<String, dynamic>>((location) {
+                  return {
+                    '_id': location['_id'],
+                    'name': location['name'],
+                    'description': location['description'],
+                    'coordinates':
+                        LatLng(location['latitude'], location['longitude']),
+                    'imageUrl':
+                        'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                            location['image'],
+                  };
+                }).toList();
+                _sortRouteLocationsByDistance();
+                if (_routeId != null) {
+                  _calculateRoute();
+                }
+              });
             }
-          });
+          }
+        } else {
+          print('Failed to get location data: $e');
         }
       }
     } else {
