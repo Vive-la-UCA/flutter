@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -11,10 +10,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:vive_la_uca/views/no_connection.dart'; // Importa la pantalla de error
+import 'package:vive_la_uca/views/no_connection.dart';
 
-// Función para calcular la distancia entre dos puntos LatLng
-double calculateDistance(LatLng start, LatLng end) {
+double _calculateDistance(LatLng start, LatLng end) {
   return Geolocator.distanceBetween(
     start.latitude,
     start.longitude,
@@ -23,7 +21,6 @@ double calculateDistance(LatLng start, LatLng end) {
   );
 }
 
-// Función para calcular el tiempo basado en la distancia
 double calculateTime(double distance) {
   const double averageSpeed = 5000 / 3600; // velocidad promedio en m/s
   return distance / averageSpeed / 60; // tiempo en minutos
@@ -44,7 +41,6 @@ class _RouteInfoState extends State<RouteInfo> {
   Map<String, dynamic>? _routeData;
   LatLng? currentLocation;
 
-  // Variables que calculan la distancia y el tiempo de la ruta
   double? _distanceToLastLocation;
   double? _timeToLastLocation;
   bool _hasConnection = true;
@@ -65,10 +61,10 @@ class _RouteInfoState extends State<RouteInfo> {
   }
 
   Future<void> _initialize() async {
-    await Future.wait([
-      _determinePosition(),
-      _loadRouteInfo(),
-    ]);
+    await _determinePosition();
+    if (_hasConnection) {
+      await _loadRouteInfo();
+    }
   }
 
   void _updateConnectionStatus(ConnectivityResult result) {
@@ -80,35 +76,36 @@ class _RouteInfoState extends State<RouteInfo> {
     });
   }
 
-  Future<LatLng?> _determinePosition() async {
+  Future<void> _determinePosition() async {
     bool serviceEnabled;
     LocationPermission permission;
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      return null;
+      return;
     }
 
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        return null;
+        return;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      return null;
+      return;
     }
 
     Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.bestForNavigation);
 
     LatLng latLng = LatLng(position.latitude, position.longitude);
-    setState(() {
-      currentLocation = latLng;
-    });
-    return latLng;
+    if (mounted) {
+      setState(() {
+        currentLocation = latLng;
+      });
+    }
   }
 
   Future<void> _loadRouteInfo() async {
@@ -148,13 +145,15 @@ class _RouteInfoState extends State<RouteInfo> {
     if (routeCoordinates.isEmpty) return;
 
     LatLng lastLocation = routeCoordinates.last;
-    double distance = calculateDistance(currentLocation, lastLocation);
+    double distance = _calculateDistance(currentLocation, lastLocation);
     double time = calculateTime(distance);
 
-    setState(() {
-      _distanceToLastLocation = distance;
-      _timeToLastLocation = time;
-    });
+    if (mounted) {
+      setState(() {
+        _distanceToLastLocation = distance;
+        _timeToLastLocation = time;
+      });
+    }
   }
 
   @override
@@ -166,10 +165,7 @@ class _RouteInfoState extends State<RouteInfo> {
     return Scaffold(
       body: _isLoading
           ? Skeletonizer(child: _buildRouteSkeleton())
-          : AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: _buildRouteContent(),
-            ),
+          : _buildRouteContent(),
     );
   }
 
