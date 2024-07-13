@@ -465,13 +465,20 @@ void _navigateToHome() {
   }
 
   void _showProximityAlert(Map<String, dynamic> location) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return CustomDialogLocation(location: location);
-      },
-    );
-  }
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return CustomDialogLocation(
+        location: location,
+        onMoreInfo: () {
+          Navigator.of(context).pop();
+          _showLocationDetails(location);
+        },
+      );
+    },
+  );
+}
+
 
   void _calculateRoute() async {
     if (currentLocation == null) return;
