@@ -84,11 +84,11 @@ class _LoginPageState extends State<LoginPage> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color.fromARGB(255, 21, 38, 80),
-              Color.fromARGB(255, 21, 38, 100)
+              Color.fromARGB(255, 3, 23, 72),
+              Color.fromARGB(255, 15, 57, 120)
             ],
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
         child: SingleChildScrollView(
@@ -110,13 +110,16 @@ class _LoginPageState extends State<LoginPage> {
                     AuthField(
                         controller: _controller.emailController,
                         labelText: 'Correo electrónico',
-                        validator: _controller.validateEmail),
+                        validator: _controller.validateEmail,
+                        prefixIcon: Icons.email,),
+                        
                     const SizedBox(height: 15),
                     AuthField(
                         controller: _controller.passwordController,
                         labelText: 'Contraseña',
                         validator: _controller.validatePassword,
-                        obscureText: true),
+                        obscureText: true,
+                        prefixIcon: Icons.lock,),
                     const SizedBox(height: 30),
                     FormButton(text: 'Iniciar sesión', onPressed: _login),
                     const SizedBox(height: 10),

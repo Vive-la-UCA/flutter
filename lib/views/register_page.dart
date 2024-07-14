@@ -50,21 +50,23 @@ class _RegisterPageState extends State<RegisterPage> {
                   children: <Widget>[
                     const Image(
                       image: AssetImage('lib/assets/images/logo.png'),
-                      height: 200,
+                      height: 300,
                     ),
                     const SimpleText(text: 'Registro'),
                     const SizedBox(height: 15),
                     AuthField(
                         controller: _controller.nameController,
                         labelText: "Nombre completo",
-                        validator: _controller.validateName),
+                        validator: _controller.validateName,
+                        prefixIcon: Icons.person),
                     const SizedBox(
                       height: 15,
                     ),
                     AuthField(
                         controller: _controller.emailController,
                         labelText: 'Correo electrónico',
-                        validator: _controller.validateEmail),
+                        validator: _controller.validateEmail,
+                        prefixIcon: Icons.email),
                     const SizedBox(
                       height: 15,
                     ),
@@ -73,6 +75,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       labelText: 'Contraseña',
                       validator: _controller.validatePassword,
                       obscureText: true,
+                      prefixIcon: Icons.lock,
                     ),
                     const SizedBox(
                       height: 15,
@@ -82,6 +85,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       labelText: 'Repite la contraseña',
                       validator: _controller.validateRepeatPassword,
                       obscureText: true,
+                      prefixIcon: Icons.lock,
                     ),
                     const SizedBox(height: 30),
                     FormButton(text: 'Registrarse', onPressed: _register),

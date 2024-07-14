@@ -5,11 +5,7 @@
 import FlutterMacOS
 import Foundation
 
-<<<<<<< HEAD
-import connectivity_plus
-=======
 import connectivity_plus_macos
->>>>>>> f3dee4e78d04502e37fc35a47257b27af4e60688
 import file_selector_macos
 import firebase_core
 import firebase_messaging
@@ -21,11 +17,7 @@ import shared_preferences_foundation
 import sqflite
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
-<<<<<<< HEAD
-  ConnectivityPlusPlugin.register(with: registry.registrar(forPlugin: "ConnectivityPlusPlugin"))
-=======
   ConnectivityPlugin.register(with: registry.registrar(forPlugin: "ConnectivityPlugin"))
->>>>>>> f3dee4e78d04502e37fc35a47257b27af4e60688
   FileSelectorPlugin.register(with: registry.registrar(forPlugin: "FileSelectorPlugin"))
   FLTFirebaseCorePlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseCorePlugin"))
   FLTFirebaseMessagingPlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseMessagingPlugin"))
