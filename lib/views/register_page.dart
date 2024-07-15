@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/controllers/register_controller.dart';
+import 'package:go_router/go_router.dart'; // Asegúrate de importar GoRouter
 import '../widgets/auth_field.dart';
 import '../widgets/form_button.dart';
 import '../widgets/simple_text.dart';
@@ -33,7 +34,7 @@ class _RegisterPageState extends State<RegisterPage> {
           gradient: LinearGradient(
             colors: [
               Color.fromARGB(255, 21, 38, 80),
-              Color.fromARGB(255, 21, 38, 100)
+              Color.fromARGB(255, 21, 79, 165)
             ],
             begin: Alignment.topRight,
             end: Alignment.bottomLeft,
@@ -48,6 +49,15 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () {
+                          context.go('/login'); // Navegar a la página de login
+                        },
+                      ),
+                    ),
                     const Image(
                       image: AssetImage('lib/assets/images/logo.png'),
                       height: 300,

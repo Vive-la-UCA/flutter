@@ -84,8 +84,8 @@ class _LoginPageState extends State<LoginPage> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color.fromARGB(255, 3, 23, 72),
-              Color.fromARGB(255, 15, 57, 120)
+              Color.fromARGB(255, 21, 38, 80),
+              Color.fromARGB(255, 21, 79, 165)
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
