@@ -144,38 +144,48 @@ class RouteInfoWidget extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        routeName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF704FCE),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      ...locations.map((location) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4.0),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.circle,
-                                    size: 8, color: Color(0xFF704FCE)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  location,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: location == nearestLocation
-                                        ? const Color(0xFF704FCE)
-                                        : Colors.black,
-                                  ),
-                                ),
-                              ],
+                  child: SizedBox(
+                    height: 100, // Tamaño fijo del contenedor scrolleable
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            routeName,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF704FCE),
                             ),
-                          )),
-                    ],
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          ...locations.map((location) => Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 4.0),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.circle,
+                                        size: 8, color: Color(0xFF704FCE)),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        location,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: location == nearestLocation
+                                              ? const Color(0xFF704FCE)
+                                              : Colors.black,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
