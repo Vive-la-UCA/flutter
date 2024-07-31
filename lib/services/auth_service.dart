@@ -22,10 +22,11 @@ class AuthService {
     }
   }
 
-  Future<Map<String, dynamic>> register(
-      String name, String email, String password) async {
-    final url = Uri.parse('$baseUrl/register');
+Future<Map<String, dynamic>> register(
+  String name, String email, String password) async {
+  final url = Uri.parse('$baseUrl/register');
 
+  try {
     final response = await http.post(
       url,
       body: jsonEncode({'name': name, 'email': email, 'password': password}),
@@ -35,9 +36,14 @@ class AuthService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to register');
+      throw Exception('Failed to register: ${response.body}');
     }
+  } catch (error) {
+    // Captura y maneja cualquier error que ocurra durante la solicitud HTTP
+    throw Exception('Failed to register: $error');
   }
+}
+
 
   Future<Map<String, dynamic>> checkToken(String token) async {
     final url = Uri.parse('$baseUrl/check-token');

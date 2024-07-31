@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class LocationMarkers {
   static List<Marker> buildMarkers(
@@ -17,30 +18,6 @@ class LocationMarkers {
           child: Column(
             children: [
               Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  location['name'],
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
@@ -49,8 +26,12 @@ class LocationMarkers {
                     color: isVisited ? const Color(0xFF704FCE) : Colors.white,
                     width: 3,
                   ),
-                  image: DecorationImage(
-                    image: NetworkImage(location['imageUrl']),
+                ),
+                child: ClipOval(
+                  child: CachedNetworkImage(
+                    imageUrl: location['imageUrl'],
+                    placeholder: (context, url) => CircularProgressIndicator(),
+                    errorWidget: (context, url, error) => Icon(Icons.error),
                     fit: BoxFit.cover,
                   ),
                 ),

@@ -45,6 +45,9 @@ class RegisterController {
     if (value != repeatPasswordController.text) {
       return 'Las contraseñas deben ser iguales';
     }
+    if (value.length < 8) {
+      return 'La contraseña debe tener al menos 8 caracteres';
+    }
     return null;
   }
 
@@ -53,6 +56,9 @@ class RegisterController {
       return 'Por favor repita su contraseña';
     } else if (passwordController.text != value) {
       return 'Las contraseñas deben ser iguales';
+    }
+    if (value.length < 8){
+      return 'La contraseña debe tener al menos 8 caracteres';
     }
     return null;
   }
@@ -71,6 +77,10 @@ class RegisterController {
     try {
       if (passwordController.text != repeatPasswordController.text) {
         throw Exception('Las contraseñas deben ser iguales');
+      }
+
+      if (passwordController.text.length < 8) {
+        throw Exception('La contraseña debe tener al menos 8 caracteres');
       }
 
       final result = await authService.register(

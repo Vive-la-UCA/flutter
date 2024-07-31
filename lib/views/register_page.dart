@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/controllers/register_controller.dart';
+import 'package:go_router/go_router.dart'; // Asegúrate de importar GoRouter
 import '../widgets/auth_field.dart';
 import '../widgets/form_button.dart';
 import '../widgets/simple_text.dart';
@@ -33,7 +34,7 @@ class _RegisterPageState extends State<RegisterPage> {
           gradient: LinearGradient(
             colors: [
               Color.fromARGB(255, 21, 38, 80),
-              Color.fromARGB(255, 21, 38, 100)
+              Color.fromARGB(255, 21, 79, 165)
             ],
             begin: Alignment.topRight,
             end: Alignment.bottomLeft,
@@ -48,23 +49,34 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () {
+                          context.go('/login'); // Navegar a la página de login
+                        },
+                      ),
+                    ),
                     const Image(
                       image: AssetImage('lib/assets/images/logo.png'),
-                      height: 200,
+                      height: 300,
                     ),
                     const SimpleText(text: 'Registro'),
                     const SizedBox(height: 15),
                     AuthField(
                         controller: _controller.nameController,
                         labelText: "Nombre completo",
-                        validator: _controller.validateName),
+                        validator: _controller.validateName,
+                        prefixIcon: Icons.person),
                     const SizedBox(
                       height: 15,
                     ),
                     AuthField(
                         controller: _controller.emailController,
                         labelText: 'Correo electrónico',
-                        validator: _controller.validateEmail),
+                        validator: _controller.validateEmail,
+                        prefixIcon: Icons.email),
                     const SizedBox(
                       height: 15,
                     ),
@@ -73,6 +85,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       labelText: 'Contraseña',
                       validator: _controller.validatePassword,
                       obscureText: true,
+                      prefixIcon: Icons.lock,
                     ),
                     const SizedBox(
                       height: 15,
@@ -82,6 +95,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       labelText: 'Repite la contraseña',
                       validator: _controller.validateRepeatPassword,
                       obscureText: true,
+                      prefixIcon: Icons.lock,
                     ),
                     const SizedBox(height: 30),
                     FormButton(text: 'Registrarse', onPressed: _register),

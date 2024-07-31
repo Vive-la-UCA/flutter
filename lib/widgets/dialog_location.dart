@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 
 class CustomDialogLocation extends StatelessWidget {
   final Map<String, dynamic> location;
+  final VoidCallback onMoreInfo; // Agrega este callback
 
-  const CustomDialogLocation({Key? key, required this.location}) : super(key: key);
+  const CustomDialogLocation({
+    Key? key,
+    required this.location,
+    required this.onMoreInfo, // Requiere el callback
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -65,9 +70,7 @@ class CustomDialogLocation extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
+                  onPressed: onMoreInfo, // Usa el callback aquí
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF704FCE),
                     shape: RoundedRectangleBorder(
@@ -76,8 +79,9 @@ class CustomDialogLocation extends StatelessWidget {
                   ),  
                   child: const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    child: Text('Ver mas información',
-                    style: TextStyle(color: Colors.white),
+                    child: Text(
+                      'Ver mas información',
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
                 ),

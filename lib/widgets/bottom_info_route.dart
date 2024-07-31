@@ -1,29 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class RouteInfoWidget extends StatelessWidget {
   final String routeName;
   final List<String> locations;
   final String imageUrl;
   final VoidCallback onCancel;
-  final double? distance;
-  final double? time;
+  final String? distanceString;
   final String? nearestLocation;
   final String? imageRoute;
+  final String? timeString;
 
   RouteInfoWidget({
     required this.routeName,
     required this.locations,
     required this.imageUrl,
     required this.onCancel,
-    this.distance,
-    this.time,
+    this.distanceString,
     this.nearestLocation,
     this.imageRoute,
+    this.timeString,
   });
 
   @override
   Widget build(BuildContext context) {
-    print(nearestLocation);
     return Container(
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.only(
@@ -57,9 +57,9 @@ class RouteInfoWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      distance != null
-                          ? '${distance!.toStringAsFixed(2)} m'
-                          : 'N/A',
+                      distanceString != null && distanceString!.isNotEmpty
+                          ? distanceString!
+                          : '--:--',
                       style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -78,7 +78,9 @@ class RouteInfoWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      time != null ? '${time!.toStringAsFixed(0)} min' : 'N/A',
+                      timeString != null && timeString!.isNotEmpty
+                          ? timeString!
+                          : '--:--',
                       style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -126,48 +128,64 @@ class RouteInfoWidget extends StatelessWidget {
                       const EdgeInsets.all(4.0), // Padding for purple border
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(15),
-                    child: Image.network(
-                      imageRoute ?? imageUrl, // Mostrar la imagen de la ruta
+                    child: CachedNetworkImage(
+                      imageUrl: imageRoute ??
+                          imageUrl, // Mostrar la imagen de la ruta
                       width: 100,
                       height: 100,
                       fit: BoxFit.cover,
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                      errorWidget: (context, url, error) =>
+                          const Icon(Icons.error),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        routeName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF704FCE),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      ...locations.map((location) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4.0),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.circle,
-                                    size: 8, color: Color(0xFF704FCE)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  location,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: location == nearestLocation
-                                        ? Color(0xFF704FCE)
-                                        : Colors.black,
-                                  ),
-                                ),
-                              ],
+                  child: SizedBox(
+                    height: 100, // Tamaño fijo del contenedor scrolleable
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            routeName,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF704FCE),
                             ),
-                          )),
-                    ],
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          ...locations.map((location) => Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 4.0),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.circle,
+                                        size: 8, color: Color(0xFF704FCE)),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        location,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: location == nearestLocation
+                                              ? const Color(0xFF704FCE)
+                                              : Colors.black,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],

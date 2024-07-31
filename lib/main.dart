@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -17,24 +18,21 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print('Handling a background message: ${message.messageId}');
 }
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  loadToken();
+  await loadToken();
   await FMTCObjectBoxBackend().initialise();
   await const FMTCStore('mapStore').manage.create();
   runApp(const MyApp());
 }
 
 bool isLoggedIn = false;
-void loadToken() async {
+
+Future<void> loadToken() async {
   final token = await TokenStorage.getToken();
-  if (token != null) {
-    isLoggedIn = true;
-  } else {
-    isLoggedIn = false;
-  }
+  isLoggedIn = token != null;
 }
 
 class MyApp extends StatelessWidget {
@@ -77,7 +75,10 @@ final GoRouter _router = GoRouter(
       path: '/route/:uid',
       builder: (context, state) {
         final String uid = state.params['uid']!;
-        return RouteInfo(uid: uid);
+        final Map<String, Object?> extra = state.extra as Map<String, Object?>;
+        final bool hasBadge = extra['hasBadge'] as bool? ?? false;
+
+        return RouteInfo(uid: uid, hasBadge: hasBadge);
       },
     ),
     GoRoute(

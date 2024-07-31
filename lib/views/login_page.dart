@@ -36,8 +36,8 @@ class _LoginPageState extends State<LoginPage> {
         // final authService = AuthService(
         //     baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
 
-        final authService =
-            AuthService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
+        final authService = AuthService(
+            baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
         final result = await authService.login(email, password);
 
         if (result.containsKey('token')) {
@@ -85,10 +85,10 @@ class _LoginPageState extends State<LoginPage> {
           gradient: LinearGradient(
             colors: [
               Color.fromARGB(255, 21, 38, 80),
-              Color.fromARGB(255, 21, 38, 100)
+              Color.fromARGB(255, 21, 79, 165)
             ],
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
         child: SingleChildScrollView(
@@ -110,13 +110,16 @@ class _LoginPageState extends State<LoginPage> {
                     AuthField(
                         controller: _controller.emailController,
                         labelText: 'Correo electrónico',
-                        validator: _controller.validateEmail),
+                        validator: _controller.validateEmail,
+                        prefixIcon: Icons.email,),
+                        
                     const SizedBox(height: 15),
                     AuthField(
                         controller: _controller.passwordController,
                         labelText: 'Contraseña',
                         validator: _controller.validatePassword,
-                        obscureText: true),
+                        obscureText: true,
+                        prefixIcon: Icons.lock,),
                     const SizedBox(height: 30),
                     FormButton(text: 'Iniciar sesión', onPressed: _login),
                     const SizedBox(height: 10),

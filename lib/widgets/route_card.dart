@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class RouteCard extends StatelessWidget {
   final String imagePath;
@@ -9,7 +11,7 @@ class RouteCard extends StatelessWidget {
   final String distance;
   final String redirect;
   final String uid;
-  final bool? hasBadge; // Hacer hasBadge opcional
+  final bool? hasBadge;
 
   const RouteCard({
     super.key,
@@ -19,22 +21,25 @@ class RouteCard extends StatelessWidget {
     required this.distance,
     this.redirect = "/",
     required this.uid,
-    this.hasBadge, // Hacer hasBadge opcional
+    this.hasBadge,
   });
 
   @override
   Widget build(BuildContext context) {
+    print('desde route card $hasBadge');
     return InkWell(
       onTap: () {
-        GoRouter.of(context).push(redirect);
+        GoRouter.of(context).push(
+          redirect,
+          extra: {'uid': uid, 'hasBadge': hasBadge},
+        );
       },
       child: Container(
         color: Colors.white,
-        width: 330, // Anchura fija para la tarjeta en un ListView horizontal
+        width: 330,
         child: Card(
           color: Colors.white,
-          elevation:
-              2, // Ajusta este valor para controlar la profundidad de la sombra
+          elevation: 2,
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -44,13 +49,20 @@ class RouteCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Image.network(
-                    imagePath,
-                    height: 150, // Altura fija para la imagen
-                    width: double
-                        .infinity, // La imagen ocupa todo el ancho de la tarjeta
-                    fit: BoxFit
-                        .cover, // La imagen se ajusta cubriendo completamente el espacio asignado
+                  CachedNetworkImage(
+                    imageUrl: imagePath,
+                    height: 150,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Skeletonizer(
+                      child: Container(
+                        height: 150,
+                        width: double.infinity,
+                        color: Colors.grey[300],
+                      ),
+                    ),
+                    errorWidget: (context, url, error) =>
+                        const Icon(Icons.error),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10.0),
@@ -90,24 +102,22 @@ class RouteCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (hasBadge != null) // Solo mostrar si hasBadge no es nulo
+              if (hasBadge != null)
                 Positioned(
                   top: 10,
                   right: 10,
                   child: Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFFD9D9D9)
-                          .withOpacity(0.71), // Color de fondo del círculo
+                      color: const Color(0xFFD9D9D9).withOpacity(0.71),
                     ),
-                    padding:
-                        const EdgeInsets.all(5.0), // Padding dentro del círculo
+                    padding: const EdgeInsets.all(5.0),
                     child: SvgPicture.asset(
                       'lib/assets/images/has_badge.svg',
                       width: 25,
                       height: 25,
                       colorFilter: ColorFilter.mode(
-                        hasBadge! ? Colors.orange : Color(0xFF515151),
+                        hasBadge! ? Colors.orange : const Color(0xFF515151),
                         BlendMode.srcIn,
                       ),
                     ),

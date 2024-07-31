@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:vive_la_uca/widgets/route_card.dart';
 import 'package:vive_la_uca/widgets/simple_text.dart';
@@ -6,6 +8,9 @@ import 'package:vive_la_uca/services/route_service.dart';
 import 'package:vive_la_uca/services/location_service.dart';
 import 'package:vive_la_uca/services/badge_service.dart';
 import 'package:vive_la_uca/services/auth_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import 'package:vive_la_uca/views/no_connection.dart'; // Importa la pantalla de error
 
 class LobbyPage extends StatefulWidget {
   const LobbyPage({super.key});
@@ -20,20 +25,58 @@ class _LobbyPageState extends State<LobbyPage> {
   List<String> _badgeIds = [];
   String? _token;
   bool _isLoading = true;
+  bool _hasConnection = true;
+  bool _hasLoadedData = false; // Nueva variable
+  Map<String, bool> _badgeStatus = {};
+  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
 
   @override
   void initState() {
     super.initState();
-    _loadTokenAndData();
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen(_updateConnectionStatus);
+    _checkConnectionAndLoadData();
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
+  }
+
+  void _updateConnectionStatus(ConnectivityResult result) {
+    setState(() {
+      _hasConnection = result != ConnectivityResult.none;
+      if (_hasConnection && !_hasLoadedData) {
+        _loadTokenAndData();
+      }
+    });
+  }
+
+  void _checkConnectionAndLoadData() async {
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    _hasConnection = connectivityResult != ConnectivityResult.none;
+    if (_hasConnection) {
+      _loadTokenAndData();
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _loadTokenAndData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     final token = await TokenStorage.getToken();
     if (token != null) {
       final authService = AuthService(
           baseUrl: 'https://vivelauca.uca.edu.sv/admin-back/api/auth');
       try {
         final userData = await authService.checkToken(token);
+        if (!mounted) return;
         setState(() {
           _token = token;
           _badgeIds = List<String>.from(userData['badges'] ?? []);
@@ -43,40 +86,50 @@ class _LobbyPageState extends State<LobbyPage> {
           futureLocations = LocationService(
                   baseUrl: 'https://vivelauca.uca.edu.sv/admin-back')
               .getAllLocations(token);
-          _isLoading = false;
         });
+
+        final routes = await futureRoutes;
+        final badgeService =
+            BadgeService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
+
+        for (var route in routes) {
+          final badge =
+              await badgeService.getBadgeByRouteId(_token!, route['uid']);
+          if (!mounted) return;
+          setState(() {
+            _badgeStatus[route['uid']] =
+                badge != null && _badgeIds.contains(badge['uid']);
+          });
+        }
+
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _hasLoadedData = true; // Datos cargados correctamente
+          });
+        }
       } catch (e) {
         print('Failed to fetch user data: $e');
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    } else {
+      if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
-    } else {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<bool> _hasBadgeForRoute(String routeId) async {
-    final badgeService =
-        BadgeService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
-    try {
-      if (_token != null) {
-        final badge = await badgeService.getBadgeByRouteId(_token!, routeId);
-        if (badge != null) {
-          return _badgeIds.contains(badge['uid']);
-        }
-      }
-      return false;
-    } catch (e) {
-      print('Failed to fetch badge for route: $e');
-      return false;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_hasConnection && !_hasLoadedData) {
+      return NoConnectionScreen(onRetry: _checkConnectionAndLoadData);
+    }
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -109,14 +162,33 @@ class _LobbyPageState extends State<LobbyPage> {
                   fontWeight: FontWeight.bold),
               const SizedBox(height: 10),
               _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? Container(
+                      height: 270,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: 3,
+                        itemBuilder: (context, index) =>
+                            buildRouteCardSkeleton(),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(width: 10),
+                      ),
+                    )
                   : FutureBuilder<List<dynamic>>(
                       future: futureRoutes,
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
-                          return const Center(
-                              child: CircularProgressIndicator());
+                          return Container(
+                            height: 270,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: 3,
+                              itemBuilder: (context, index) =>
+                                  buildRouteCardSkeleton(),
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(width: 10),
+                            ),
+                          );
                         } else if (snapshot.hasError) {
                           return Text('Error: ${snapshot.error}');
                         } else if (snapshot.hasData) {
@@ -127,37 +199,20 @@ class _LobbyPageState extends State<LobbyPage> {
                               itemCount: snapshot.data!.length,
                               itemBuilder: (context, index) {
                                 var route = snapshot.data![index];
-                                return FutureBuilder<bool>(
-                                  future: _hasBadgeForRoute(route['uid']),
-                                  builder: (context, badgeSnapshot) {
-                                    if (badgeSnapshot.connectionState ==
-                                            ConnectionState.done &&
-                                        !badgeSnapshot.hasError) {
-                                      return RouteCard(
-                                        imagePath:
-                                            'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                                                route['image'],
-                                        title: route['name'],
-                                        description: route['description'],
-                                        distance: '',
-                                        redirect: '/route/${route['uid']}',
-                                        uid: route['uid'],
-                                        hasBadge: badgeSnapshot.data!,
-                                      );
-                                    } else {
-                                      return RouteCard(
-                                        imagePath:
-                                            'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                                                route['image'],
-                                        title: route['name'],
-                                        description: route['description'],
-                                        distance: '',
-                                        redirect: '/route/${route['uid']}',
-                                        uid: route['uid'],
-                                        hasBadge: false,
-                                      );
-                                    }
-                                  },
+                                return AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 300),
+                                  child: RouteCard(
+                                    key: ValueKey(route['uid']),
+                                    imagePath:
+                                        'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                                            route['image'],
+                                    title: route['name'],
+                                    description: route['description'],
+                                    distance: '',
+                                    redirect: '/route/${route['uid']}',
+                                    uid: route['uid'],
+                                    hasBadge: _badgeStatus[route['uid']],
+                                  ),
                                 );
                               },
                               separatorBuilder: (context, index) =>
@@ -178,14 +233,33 @@ class _LobbyPageState extends State<LobbyPage> {
                   fontWeight: FontWeight.bold),
               const SizedBox(height: 15),
               _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? Container(
+                      height: 270,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: 3,
+                        itemBuilder: (context, index) =>
+                            buildRouteCardSkeleton(),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(width: 10),
+                      ),
+                    )
                   : FutureBuilder<List<dynamic>>(
                       future: futureLocations,
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
-                          return const Center(
-                              child: CircularProgressIndicator());
+                          return Container(
+                            height: 270,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: 3,
+                              itemBuilder: (context, index) =>
+                                  buildRouteCardSkeleton(),
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(width: 10),
+                            ),
+                          );
                         } else if (snapshot.hasError) {
                           return Text('Error: ${snapshot.error}');
                         } else if (snapshot.hasData) {
@@ -196,15 +270,19 @@ class _LobbyPageState extends State<LobbyPage> {
                               itemCount: snapshot.data!.length,
                               itemBuilder: (context, index) {
                                 var location = snapshot.data![index];
-                                return RouteCard(
-                                  imagePath:
-                                      'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                                          location['image'],
-                                  title: location['name'],
-                                  description: location['description'],
-                                  distance: '',
-                                  redirect: '/location/${location['uid']}',
-                                  uid: location['uid'],
+                                return AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 300),
+                                  child: RouteCard(
+                                    key: ValueKey(location['uid']),
+                                    imagePath:
+                                        'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                                            location['image'],
+                                    title: location['name'],
+                                    description: location['description'],
+                                    distance: '',
+                                    redirect: '/location/${location['uid']}',
+                                    uid: location['uid'],
+                                  ),
                                 );
                               },
                               separatorBuilder: (context, index) =>
@@ -219,6 +297,63 @@ class _LobbyPageState extends State<LobbyPage> {
               const SizedBox(height: 30),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildRouteCardSkeleton() {
+    return Container(
+      width: 330,
+      child: Card(
+        color: Colors.white,
+        elevation: 2,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Skeletonizer(
+              child: Container(
+                height: 150,
+                width: double.infinity,
+                color: Colors.grey[300],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Skeletonizer(
+                    child: Container(
+                      height: 20,
+                      width: 200,
+                      color: Colors.grey[300],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Skeletonizer(
+                    child: Container(
+                      height: 16,
+                      width: 100,
+                      color: Colors.grey[300],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Skeletonizer(
+                    child: Container(
+                      height: 14,
+                      width: double.infinity,
+                      color: Colors.grey[300],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

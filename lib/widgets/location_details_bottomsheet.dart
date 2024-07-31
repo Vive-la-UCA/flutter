@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 //*Constants
 const maxLargeSheet = 0.9;
@@ -14,7 +16,7 @@ class LocationDetailsBottomSheet extends StatelessWidget {
     return ConstrainedBox(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height *
-            maxLargeSheet, // 80% del tamaño de la pantalla
+            maxLargeSheet, // 90% del tamaño de la pantalla
       ),
       child: Container(
         decoration: const BoxDecoration(
@@ -35,18 +37,24 @@ class LocationDetailsBottomSheet extends StatelessWidget {
                     topLeft: Radius.circular(16.0),
                     topRight: Radius.circular(16.0),
                   ),
-                  child: Image.network(
-                    location['imageUrl'],
+                  child: CachedNetworkImage(
+                    imageUrl: location['imageUrl'],
                     height: 300,
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.error,
-                        color: Colors.red,
-                        size: 24,
-                      );
-                    },
+                    placeholder: (context, url) => Skeletonizer(
+                      child: Container(
+                        width: double.infinity,
+                        height: 300,
+                        color: Colors.grey[300],
+                      ),
+                    ),
+                    fadeInDuration: const Duration(milliseconds: 500),
+                    errorWidget: (context, url, error) => const Icon(
+                      Icons.error,
+                      color: Colors.red,
+                      size: 24,
+                    ),
                   ),
                 ),
                 Positioned(

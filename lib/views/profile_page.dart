@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,6 +9,13 @@ import 'package:vive_la_uca/services/badge_service.dart';
 import 'package:vive_la_uca/widgets/logout_button.dart';
 import 'package:vive_la_uca/widgets/simple_text.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:vive_la_uca/widgets/badge_detail_sheet.dart';
+import 'package:vive_la_uca/services/route_service.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:vive_la_uca/views/no_connection.dart'; // Importa la pantalla de error
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -21,12 +29,32 @@ class _ProfilePageState extends State<ProfilePage> {
   List<String> _badgeIds = []; // To hold badge IDs
   List<Map<String, dynamic>> _badges = []; // To hold detailed badge data
   String? _profileImageUrl;
+  bool _isLoading = true; // Indicator for loading badges
+  bool _hasConnection = true;
+  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
 
   @override
   void initState() {
     super.initState();
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen(_updateConnectionStatus);
     _loadProfileImage();
     _loadToken();
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
+  }
+
+  void _updateConnectionStatus(ConnectivityResult result) {
+    setState(() {
+      _hasConnection = result != ConnectivityResult.none;
+      if (_hasConnection && !_isLoading) {
+        _loadToken();
+      }
+    });
   }
 
   Future<void> _loadProfileImage() async {
@@ -84,7 +112,13 @@ class _ProfilePageState extends State<ProfilePage> {
         });
         _fetchBadges(token);
       } catch (e) {
-        _showErrorDialog('Failed to fetch user data: $e');
+        if (e is SocketException) {
+          setState(() {
+            _hasConnection = false;
+          });
+        } else {
+          _showErrorDialog('Failed to fetch user data: $e');
+        }
       }
     }
   }
@@ -102,9 +136,19 @@ class _ProfilePageState extends State<ProfilePage> {
       );
       setState(() {
         _badges = badges.toList();
+        _isLoading = false; // Set loading to false when done
       });
     } catch (e) {
-      _showErrorDialog('Failed to fetch badges: $e');
+      if (e is SocketException) {
+        setState(() {
+          _hasConnection = false;
+        });
+      } else {
+        _showErrorDialog('Failed to fetch badges: $e');
+        setState(() {
+          _isLoading = false; // Set loading to false even on error
+        });
+      }
     }
   }
 
@@ -126,8 +170,44 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  void _showBadgeDetailSheet(
+      BuildContext context, Map<String, dynamic> badge) async {
+    final imageUrl = badge['image'] ?? '';
+    final badgeName = badge['name'] ?? 'Unnamed Badge';
+    final routeId = badge['route']['_id'] ?? '';
+
+    final token = await TokenStorage.getToken();
+    final routeService =
+        RouteService(baseUrl: 'https://vivelauca.uca.edu.sv/admin-back');
+    try {
+      final routeData = await routeService.getOneRoute(token!, routeId);
+      final routeName = routeData['name'] ?? 'unknown';
+      final routeImage = routeData['image'] ?? '';
+
+      showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return BadgeDetailSheet(
+            imageUrl:
+                'https://vivelauca.uca.edu.sv/admin-back/uploads/' + imageUrl,
+            badgeName: badgeName,
+            routeName: routeName,
+            routeImageUrl:
+                'https://vivelauca.uca.edu.sv/admin-back/uploads/' + routeImage,
+          );
+        },
+      );
+    } catch (e) {
+      _showErrorDialog('Failed to fetch route data: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!_hasConnection) {
+      return NoConnectionScreen(onRetry: _loadToken);
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -169,10 +249,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       backgroundColor: Colors.white,
                       backgroundImage: _profileImageUrl != null
                           ? _profileImageUrl!.startsWith('http')
-                              ? NetworkImage(_profileImageUrl!)
+                              ? CachedNetworkImageProvider(_profileImageUrl!)
                               : FileImage(File(_profileImageUrl!))
                                   as ImageProvider
-                          : const NetworkImage(
+                          : const CachedNetworkImageProvider(
                               'https://i0.wp.com/digitalhealthskills.com/wp-content/uploads/2022/11/3da39-no-user-image-icon-27.png?fit=500%2C500&ssl=1',
                             ),
                     ),
@@ -202,11 +282,14 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
             const SizedBox(height: 15),
-            Text(
-              _userName ?? 'Loading...',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+            Skeletonizer(
+              enabled: _userName == null,
+              child: Text(
+                _userName ?? '',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const SizedBox(height: 30),
@@ -223,59 +306,109 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const SizedBox(height: 20),
             Expanded(
-              child: _badges.isEmpty
+              child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : GridView.builder(
-                      padding: const EdgeInsets.only(top: 20),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        mainAxisSpacing: 10,
-                        crossAxisSpacing: 10,
-                        childAspectRatio: 1,
-                      ),
-                      itemCount: _badges.length,
-                      itemBuilder: (context, index) {
-                        final badge = _badges[index];
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(15),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 5,
-                                offset: Offset(2, 2),
-                              ),
-                            ],
-                          ),
+                  : _badges.isEmpty
+                      ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
-                                      badge['image'],
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
+                              SvgPicture.asset(
+                                'lib/assets/images/has_badge.svg',
+                                width: 50,
+                                height: 50,
+                                colorFilter: const ColorFilter.mode(
+                                  Color(0xFFB9C0C9), // Gris
+                                  BlendMode.srcIn,
                                 ),
                               ),
-                              SizedBox(height: 10),
-                              Text(
-                                badge['name'] ?? 'Unnamed Badge',
-                                textAlign: TextAlign.center,
+                              const SizedBox(height: 10),
+                              const Text(
+                                'Consigue insignias completando las rutas',
+                                textAlign: TextAlign.center, // Centrar el texto
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.orange,
+                                  color: Colors.black,
                                 ),
                               ),
                             ],
                           ),
-                        );
-                      },
-                    ),
+                        )
+                      : GridView.builder(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.only(top: 20),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 10,
+                            childAspectRatio: 0.7,
+                          ),
+                          itemCount: _badges.length,
+                          itemBuilder: (context, index) {
+                            final badge = _badges[index];
+                            return GestureDetector(
+                              onTap: () =>
+                                  _showBadgeDetailSheet(context, badge),
+                              child: Container(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(15),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 5,
+                                      offset: Offset(2, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Skeletonizer(
+                                        enabled: _isLoading,
+                                        child: CachedNetworkImage(
+                                          imageUrl:
+                                              'https://vivelauca.uca.edu.sv/admin-back/uploads/' +
+                                                  badge['image'],
+                                          width: 50,
+                                          height: 50,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) =>
+                                              Container(
+                                            width: 50,
+                                            height: 50,
+                                            color: Colors.grey[300],
+                                          ),
+                                          errorWidget: (context, url, error) =>
+                                              const Icon(Icons.error),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Skeletonizer(
+                                      enabled: _isLoading,
+                                      child: Text(
+                                        badge['name'] ?? 'Unnamed Badge',
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.orange,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
             ),
             const SizedBox(height: 15),
             const LogoutButton(),

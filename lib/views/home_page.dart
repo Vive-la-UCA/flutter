@@ -17,7 +17,7 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _pages = [
     const LobbyPage(),
     const ProfilePage(),
-    const MapPage(),
+    MapPage(),
   ];
 
   void _onItemTapped(int index) {
